@@ -165,6 +165,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .complete-overlay.active{display:flex}
 .complete-icon{font-size:64px;animation:pop .4s ease}
 @keyframes pop{0%{transform:scale(0)}80%{transform:scale(1.15)}100%{transform:scale(1)}}
+.swap-modal{position:fixed;inset:0;background:rgba(8,8,8,.96);z-index:400;display:none;align-items:center;justify-content:center;padding:16px}
+.swap-modal.active{display:flex}
+.swap-modal-content{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-width:100%;width:100%;max-height:80vh;display:flex;flex-direction:column}
+.swap-modal-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.swap-modal-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px}
+.swap-modal-body{flex:1;overflow-y:auto;padding:16px}
+.swap-close{cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border2);color:var(--text2);transition:all .2s}
+.swap-close:hover{border-color:var(--orange);color:var(--orange)}
 .complete-title{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:800;letter-spacing:2px;text-transform:uppercase;line-height:1.1}
 .complete-stats{display:flex;gap:28px}
 .complete-stat-num{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;color:var(--orange)}
@@ -236,8 +244,18 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
       </div>
 
       <div class="card" style="padding:14px">
-        <div class="section-label" style="margin-bottom:10px">Lagging Muscle Focus</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px" id="focusChips"></div>
+        <div onclick="toggleFocusPanel()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+          <div class="section-label" style="padding:0">Lagging Muscle Focus</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="focusActiveTag" style="font-size:11px;color:var(--orange);font-weight:600"></span>
+            <svg id="focusChevron" width="16" height="16" fill="none" stroke="var(--text3)" stroke-width="2" viewBox="0 0 24 24" style="transition:transform .25s"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div id="focusPanel" style="max-height:0;overflow:hidden;transition:max-height .3s ease">
+          <div style="padding-top:12px">
+            <div style="display:flex;flex-wrap:wrap;gap:6px" id="focusChips"></div>
+          </div>
+        </div>
         <div id="focusDesc" style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.5"></div>
       </div>
 
@@ -358,6 +376,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
       <div class="section-label">Customize Program</div>
       <div class="card">
+        <div onclick="toggleCustomPanel()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:4px">
+          <div style="font-size:13px;color:var(--text2)">Edit exercises, sets, reps &amp; rest</div>
+          <svg id="customChevron" width="16" height="16" fill="none" stroke="var(--text3)" stroke-width="2" viewBox="0 0 24 24" style="transition:transform .25s"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="customPanel" style="max-height:0;overflow:hidden;transition:max-height .3s ease">
+        <div style="padding-top:10px"></div>
         <div class="section-label" style="margin-bottom:8px">Select a workout to edit exercises</div>
         <div class="workout-tabs" style="margin-bottom:12px">
           <div class="w-tab" onclick="showCustomize('A',this)">A</div>
@@ -372,6 +396,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
         <button class="quick-btn" style="margin-top:12px;background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="resetCustom()">
           ↺ Reset Program to Default
         </button>
+        </div>
       </div>
 
       <div class="section-label">Data</div>
@@ -448,6 +473,19 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <div class="detail-title" id="detailTitle">Exercise</div>
   </div>
   <div class="detail-body" id="detailBody"></div>
+</div>
+
+<!-- SWAP EXERCISE MODAL -->
+<div class="swap-modal" id="swapModal">
+  <div class="swap-modal-content">
+    <div class="swap-modal-header">
+      <div class="swap-modal-title">Pick a replacement exercise</div>
+      <div class="swap-close" onclick="closeSwapModal()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><line x1="5" y1="5" x2="19" y2="19"/></svg>
+      </div>
+    </div>
+    <div class="swap-modal-body" id="swapModalBody"></div>
+  </div>
 </div>
 
 <!-- WORKOUT COMPLETE -->
@@ -597,92 +635,178 @@ const WORKOUTS = {
 
 
 const FOCUS_POOLS={
-  shoulders:[
-    {id:'f-rear-fly',name:'Bent-Over Rear Delt Fly',sets:2,reps:{bal:'12-15',mass:'8-10',cut:'15-20'},muscles:['Rear Delts','Upper Back'],
+  reardelts:[
+    {id:'f-rear-fly',name:'Bent-Over Rear Delt Fly',sets:2,reps:{bal:'12-15',mass:'10-12',cut:'15-20'},muscles:['Rear Delts','Upper Back'],
      video:'https://www.youtube.com/results?search_query=dumbbell+rear+delt+fly+proper+form',
-     instructions:'Hinge at the hips, light dumbbells hanging down. Raise arms out to the sides like spreading wings, leading with the elbows, squeezing rear delts.',
+     instructions:'Hinge at the hips, light dumbbells hanging down. Raise arms out to the sides like spreading wings, leading with the elbows.',
      tips:['Go lighter than you think — rear delts are small','Pinkies up at the top','No momentum from the torso'],
      mistakes:['Using traps instead of rear delts','Standing too upright','Swinging the weight']},
+    {id:'f-band-facepull',name:'High Band Face Pull',sets:2,reps:{bal:'15-20',mass:'12-15',cut:'20-25'},muscles:['Rear Delts','Rotator Cuff'],
+     video:'https://www.youtube.com/results?search_query=band+face+pull+shoulder+health',
+     instructions:'Anchor the band above head height. Pull toward your forehead while externally rotating so your thumbs finish pointing behind you.',
+     tips:['The external rotation at the end is the whole point','Light band, high reps','The single best move for pressing-related shoulder pain'],
+     mistakes:['Pulling to the neck','Too heavy to rotate','Elbows dropping below shoulder height']},
+  ],
+  sidedelts:[
     {id:'f-band-lat',name:'Band Lateral Raise',sets:2,reps:{bal:'15-20',mass:'10-12',cut:'20-25'},muscles:['Side Delts'],
      video:'https://www.youtube.com/results?search_query=band+lateral+raise+proper+form',
-     instructions:'Stand on the band, handles at your sides. Raise arms to shoulder height against the band. Constant tension keeps the delts working the whole rep.',
-     tips:['The band burns most at the top — pause there','Slight forward lean of the dumbbells','Slow negatives'],
+     instructions:'Stand on the band, handles at your sides. Raise arms to shoulder height against the band tension.',
+     tips:['The band burns most at the top — pause there','Slow negatives','Wider stance = more resistance'],
      mistakes:['Shrugging','Going above shoulder height','Fast sloppy reps']},
+    {id:'f-lean-lat',name:'Leaning Lateral Raise',sets:2,reps:{bal:'12-15',mass:'10-12',cut:'15-20'},muscles:['Side Delts'],
+     video:'https://www.youtube.com/results?search_query=leaning+lateral+raise+proper+form',
+     instructions:'Hold a rack or doorframe with one hand and lean away. Raise the dumbbell in the free hand to shoulder height — the lean puts the delt under tension from the very bottom.',
+     tips:['Leaning increases the stretch at the bottom','Very light weight required','One arm at a time'],
+     mistakes:['Not leaning far enough','Too heavy','Using body sway']},
   ],
-  chest:[
-    {id:'f-db-flye',name:'Dumbbell Flye',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Chest','Front Delts'],
-     video:'https://www.youtube.com/results?search_query=dumbbell+flye+proper+form',
-     instructions:'Lie on the bench, arms above chest with a slight elbow bend. Open wide until you feel a deep chest stretch, then squeeze back together like hugging a tree.',
-     tips:['Keep the same elbow bend the whole rep','Feel the stretch — that is where growth happens','Lighter weight than pressing'],
+  upperchest:[
+    {id:'f-incline-flye',name:'Incline Dumbbell Flye',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Upper Chest','Front Delts'],
+     video:'https://www.youtube.com/results?search_query=incline+dumbbell+flye+proper+form',
+     instructions:'Bench at 30°, arms above chest with a slight elbow bend. Open wide to a deep stretch, then squeeze back together.',
+     tips:['Keep the same elbow bend the whole rep','The stretch is where growth happens','Lighter than pressing'],
      mistakes:['Turning it into a press','Going too heavy','Dropping elbows too deep']},
-    {id:'f-band-pushup',name:'Banded Push-Up',sets:2,reps:{bal:'10-15',mass:'6-10',cut:'15-20'},muscles:['Chest','Triceps','Core'],
-     video:'https://www.youtube.com/results?search_query=banded+push+up+proper+form',
-     instructions:'Loop the band across your upper back and under both palms. Perform push-ups — the band adds resistance right where you are strongest at the top.',
-     tips:['Band tension makes lockout the hard part','Keep the body rigid','Full chest-to-floor range'],
-     mistakes:['Band slipping — anchor it under the thumbs','Sagging hips','Half reps']},
+    {id:'f-low-high-flye',name:'Low-to-High Band Flye',sets:2,reps:{bal:'12-15',mass:'10-12',cut:'15-20'},muscles:['Upper Chest'],
+     video:'https://www.youtube.com/results?search_query=low+to+high+cable+flye+band+proper+form',
+     instructions:'Anchor the band low behind you. Sweep both handles up and inward, finishing at chin height with hands together.',
+     tips:['The upward angle targets the clavicular (upper) fibers','Squeeze for 1 sec at the top','Constant tension the whole set'],
+     mistakes:['Finishing too low','Bending the elbows','Letting the band snap back']},
   ],
-  back:[
+  midchest:[
+    {id:'f-db-flye',name:'Flat Dumbbell Flye',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Chest','Front Delts'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+flye+proper+form',
+     instructions:'Lie flat, arms above chest with a slight elbow bend. Open wide until you feel a deep chest stretch, then squeeze back together.',
+     tips:['Same elbow bend throughout','Think about hugging a barrel','Deep stretch, controlled return'],
+     mistakes:['Turning it into a press','Going too heavy','Bouncing out of the stretch']},
+    {id:'f-band-pushup',name:'Banded Push-Up',sets:2,reps:{bal:'10-15',mass:'8-10',cut:'15-20'},muscles:['Chest','Triceps','Core'],
+     video:'https://www.youtube.com/results?search_query=banded+push+up+proper+form',
+     instructions:'Loop the band across your upper back and under both palms. Push-up as normal — the band loads the top half hardest.',
+     tips:['Band tension makes lockout the hard part','Keep the body rigid','Full chest-to-floor range'],
+     mistakes:['Band slipping — anchor under the thumbs','Sagging hips','Half reps']},
+  ],
+  lats:[
     {id:'f-pullover',name:'Dumbbell Pullover',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Lats','Chest','Serratus'],
      video:'https://www.youtube.com/results?search_query=dumbbell+pullover+proper+form',
-     instructions:'Lie across the bench, one dumbbell held over your chest with both hands. Lower it back behind your head in an arc until you feel the lat stretch, then pull back over.',
-     tips:['Slight elbow bend throughout','Deep breath at the stretch','Think about pulling with your lats, not arms'],
-     mistakes:['Bending elbows too much','Rushing the stretch position','Arching the lower back excessively']},
+     instructions:'Lie across the bench, one dumbbell held over your chest. Lower it back behind your head in an arc until you feel the lat stretch, then pull back over.',
+     tips:['Slight elbow bend throughout','Deep breath at the stretch','Pull with the lats, not the arms'],
+     mistakes:['Bending elbows too much','Rushing the stretch','Over-arching the lower back']},
     {id:'f-band-pulldown',name:'Band Straight-Arm Pulldown',sets:2,reps:{bal:'12-15',mass:'10-12',cut:'15-20'},muscles:['Lats','Core'],
      video:'https://www.youtube.com/results?search_query=band+straight+arm+pulldown+proper+form',
-     instructions:'Anchor band high. With straight arms, pull the band down to your thighs in an arc, squeezing the lats. Control back up.',
-     tips:['Arms stay straight — this isolates the lats','Squeeze at the bottom for 1 sec','Hinge slightly forward'],
-     mistakes:['Bending the arms (becomes a pushdown)','Using momentum','Standing too close to the anchor']},
+     instructions:'Anchor band high. With straight arms, pull the band down to your thighs in an arc, squeezing the lats.',
+     tips:['Arms stay straight — this isolates the lats','Squeeze 1 sec at the bottom','Hinge slightly forward'],
+     mistakes:['Bending the arms','Using momentum','Standing too close to the anchor']},
   ],
-  arms:[
+  upperback:[
+    {id:'f-shrug',name:'Dumbbell Shrug',sets:2,reps:{bal:'12-15',mass:'8-12',cut:'15-20'},muscles:['Traps','Grip'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+shrug+proper+form',
+     instructions:'Dumbbells at your sides. Shrug straight up toward your ears, hold the squeeze for a second, lower slowly.',
+     tips:['Straight up and down — no rolling','1-second hold at the top','Let the weight stretch the traps at the bottom'],
+     mistakes:['Rolling the shoulders','Bouncing','Using biceps to help']},
+    {id:'f-high-row',name:'Band High Row to Neck',sets:2,reps:{bal:'12-15',mass:'10-12',cut:'15-20'},muscles:['Upper Back','Rear Delts','Traps'],
+     video:'https://www.youtube.com/results?search_query=band+high+row+upper+back+proper+form',
+     instructions:'Anchor band at chest height. Row toward your upper chest/neck with elbows high and flared, squeezing the upper back hard.',
+     tips:['Elbows high — that is what hits upper back over lats','Squeeze shoulder blades together','Great posture builder'],
+     mistakes:['Elbows dropping (becomes a normal row)','Leaning back','Short range of motion']},
+  ],
+  biceps:[
     {id:'f-conc-curl',name:'Concentration Curl',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Biceps'],
      video:'https://www.youtube.com/results?search_query=concentration+curl+proper+form',
-     instructions:'Seated, elbow braced against your inner thigh. Curl the dumbbell with strict form, squeezing hard at the top. Zero momentum possible — pure biceps.',
+     instructions:'Seated, elbow braced against your inner thigh. Curl with strict form, squeezing hard at the top. Zero momentum possible.',
      tips:['Full stretch at the bottom','Rotate pinky up as you curl','Slow 3-second negatives'],
      mistakes:['Lifting the elbow off the thigh','Partial range','Going too heavy']},
-    {id:'f-oh-tricep',name:'Overhead Tricep Extension',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Triceps'],
-     video:'https://www.youtube.com/results?search_query=dumbbell+overhead+tricep+extension+proper+form',
-     instructions:'Hold one dumbbell overhead with both hands. Lower it behind your head by bending the elbows, then extend back up. The overhead position stretches the long head of the triceps.',
-     tips:['Keep elbows pointed forward, not flared','Deep stretch behind the head','Core tight to protect the back'],
-     mistakes:['Elbows flaring wide','Arching the lower back','Cutting the stretch short']},
+    {id:'f-incline-curl',name:'Incline Dumbbell Curl',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Biceps','Long Head'],
+     video:'https://www.youtube.com/results?search_query=incline+dumbbell+curl+proper+form',
+     instructions:'Lie back on a 45-60° incline, arms hanging straight down. Curl from that stretched position — the hardest and most productive curl variation.',
+     tips:['Let the arms hang fully behind you at the bottom','Best stretch of any curl variation','Do not swing the elbows forward'],
+     mistakes:['Sitting too upright','Elbows drifting forward','Cutting the bottom stretch short']},
   ],
-  legs:[
-    {id:'f-rev-lunge',name:'Dumbbell Reverse Lunge',sets:2,reps:{bal:'10 each leg',mass:'6-8 each leg',cut:'12-15 each leg'},muscles:['Quads','Glutes'],
-     video:'https://www.youtube.com/results?search_query=dumbbell+reverse+lunge+proper+form',
-     instructions:'Holding dumbbells at your sides, step backward into a lunge, lowering the rear knee toward the floor. Drive through the front heel to return.',
-     tips:['Easier on the knees than forward lunges','Torso slightly forward loads the glutes more','Control the descent'],
-     mistakes:['Front knee caving in','Pushing off the back foot','Steps too short']},
+  triceps:[
+    {id:'f-oh-tricep',name:'Overhead Tricep Extension',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Triceps','Long Head'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+overhead+tricep+extension+proper+form',
+     instructions:'Hold one dumbbell overhead with both hands. Lower behind your head by bending the elbows, then extend. Overhead position stretches the long head.',
+     tips:['Elbows pointed forward, not flared','Deep stretch behind the head','Core tight to protect the back'],
+     mistakes:['Elbows flaring wide','Arching the lower back','Cutting the stretch short']},
+    {id:'f-skull',name:'Dumbbell Skull Crusher',sets:2,reps:{bal:'10-12',mass:'8-10',cut:'12-15'},muscles:['Triceps'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+skull+crusher+proper+form',
+     instructions:'Lie on the bench, dumbbells above your chest with a neutral grip. Bend at the elbows to lower toward your forehead, then extend back up.',
+     tips:['Only the forearms move — upper arms stay put','Neutral grip is easier on the elbows','Control the descent'],
+     mistakes:['Upper arms drifting back','Flaring elbows','Going too heavy and straining elbows']},
+  ],
+  quads:[
     {id:'f-heel-squat',name:'Heel-Elevated Goblet Squat',sets:2,reps:{bal:'12-15',mass:'8-10',cut:'15-20'},muscles:['Quads'],
      video:'https://www.youtube.com/results?search_query=heel+elevated+goblet+squat+proper+form',
-     instructions:'Place your heels on a small plate or board, dumbbell at chest. Squat deep — the heel elevation shifts the load hard onto the quads.',
+     instructions:'Heels on a small plate or board, dumbbell at chest. Squat deep — the elevation shifts the load hard onto the quads.',
      tips:['Let the knees travel forward — that is the point','Stay upright','Full depth, controlled tempo'],
      mistakes:['Leaning forward (defeats the purpose)','Shallow depth','Bouncing at the bottom']},
+    {id:'f-rev-lunge',name:'Dumbbell Reverse Lunge',sets:2,reps:{bal:'10 each leg',mass:'6-8 each leg',cut:'12-15 each leg'},muscles:['Quads','Glutes'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+reverse+lunge+proper+form',
+     instructions:'Dumbbells at your sides. Step backward into a lunge, lowering the rear knee toward the floor. Drive through the front heel to return.',
+     tips:['Easier on the knees than forward lunges','Upright torso loads the quads more','Control the descent'],
+     mistakes:['Front knee caving in','Pushing off the back foot','Steps too short']},
   ],
-  glutes:[
-    {id:'f-sl-rdl',name:'Single-Leg Romanian Deadlift',sets:2,reps:{bal:'8-10 each leg',mass:'6-8 each leg',cut:'12-15 each leg'},muscles:['Glutes','Hamstrings','Balance'],
+  hamstrings:[
+    {id:'f-sl-rdl',name:'Single-Leg Romanian Deadlift',sets:2,reps:{bal:'8-10 each leg',mass:'6-8 each leg',cut:'12-15 each leg'},muscles:['Hamstrings','Glutes','Balance'],
      video:'https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+dumbbell+proper+form',
-     instructions:'Hold a dumbbell in one hand, hinge forward on the opposite leg, letting the free leg extend behind you. Feel the glute and hamstring stretch, then drive back up.',
+     instructions:'Dumbbell in one hand, hinge forward on the opposite leg with the free leg extending behind you. Feel the hamstring stretch, drive back up.',
      tips:['Square hips to the floor','Soft bend in the standing knee','Touch the toe down between reps if balance is hard'],
      mistakes:['Hips rotating open','Rounding the back','Rushing — balance work needs tempo']},
+    {id:'f-band-curl-leg',name:'Band Leg Curl',sets:2,reps:{bal:'12-15',mass:'10-12',cut:'15-20'},muscles:['Hamstrings'],
+     video:'https://www.youtube.com/results?search_query=resistance+band+leg+curl+proper+form',
+     instructions:'Lie face down, band anchored low behind you and looped around your ankles. Curl your heels toward your glutes against the band.',
+     tips:['The only true knee-flexion move in a home gym','Squeeze at the top','Slow negatives — hamstrings love eccentrics'],
+     mistakes:['Hips lifting off the floor','Using momentum','Band too loose to matter']},
+  ],
+  glutes:[
     {id:'f-band-bridge',name:'Banded Glute Bridge',sets:2,reps:{bal:'15-20',mass:'10-12 paused',cut:'20-25'},muscles:['Glutes','Hamstrings'],
      video:'https://www.youtube.com/results?search_query=banded+glute+bridge+proper+form',
-     instructions:'Band looped just above the knees, lying on your back. Drive hips up while pushing the knees out against the band. Squeeze glutes hard at the top for 2 seconds.',
+     instructions:'Band just above the knees, lying on your back. Drive hips up while pushing the knees out against the band. Squeeze for 2 seconds at the top.',
      tips:['Push knees OUT against the band the whole time','Posterior pelvic tilt at the top','Add a dumbbell on your hips to progress'],
      mistakes:['Knees caving in','Arching the lower back instead of using glutes','No pause at the top']},
+    {id:'f-hip-thrust',name:'Dumbbell Hip Thrust',sets:2,reps:{bal:'12-15',mass:'8-12',cut:'15-20'},muscles:['Glutes','Hamstrings'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+hip+thrust+bench+proper+form',
+     instructions:'Upper back on the bench, dumbbell across your hips. Drive hips up until your body is a straight line from knees to shoulders, squeeze, lower.',
+     tips:['Chin tucked, ribs down','Shins vertical at the top','2-second squeeze every rep'],
+     mistakes:['Hyperextending the lower back','Pushing through toes instead of heels','Short range of motion']},
+  ],
+  calves:[
+    {id:'f-calf-raise',name:'Standing Calf Raise',sets:3,reps:{bal:'15-20',mass:'10-15',cut:'20-25'},muscles:['Calves'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+standing+calf+raise+proper+form',
+     instructions:'Stand on the edge of a step or plate with dumbbells at your sides. Drop the heels for a deep stretch, then rise onto your toes as high as possible.',
+     tips:['Full stretch at the bottom is essential','1-second hold at the top','Calves respond to high reps and frequency'],
+     mistakes:['Bouncing out of the stretch','Partial range','Rushing the reps']},
+    {id:'f-sl-calf',name:'Single-Leg Calf Raise',sets:2,reps:{bal:'12-15 each',mass:'10-12 each',cut:'15-20 each'},muscles:['Calves','Balance'],
+     video:'https://www.youtube.com/results?search_query=single+leg+calf+raise+proper+form',
+     instructions:'One foot on a step, dumbbell in the same-side hand, other hand on a wall for balance. Full stretch down, full contraction up.',
+     tips:['Doubles the load without heavier dumbbells','Great for evening out side-to-side differences','Hold the top for 1 sec'],
+     mistakes:['Bouncing','Not going through full range','Leaning on the wall too much']},
   ],
   core:[
     {id:'f-russian',name:'Weighted Russian Twist',sets:2,reps:{bal:'12 per side',mass:'10 per side heavy',cut:'15-20 per side'},muscles:['Obliques','Core'],
      video:'https://www.youtube.com/results?search_query=russian+twist+dumbbell+proper+form',
-     instructions:'Seated, leaning back with a dumbbell held at your chest. Rotate the torso side to side with control. Feet down for easier, elevated for harder.',
-     tips:['Rotate from the ribcage, not the arms','Slow and controlled beats fast reps','Keep the chest tall'],
-     mistakes:['Just swinging the arms side to side','Rounding the back','Moving too fast']},
+     instructions:'Seated, leaning back with a dumbbell at your chest. Rotate the torso side to side with control. Feet down is easier, elevated is harder.',
+     tips:['Rotate from the ribcage, not the arms','Slow beats fast','Keep the chest tall'],
+     mistakes:['Just swinging the arms','Rounding the back','Moving too fast']},
     {id:'f-side-plank',name:'Side Plank',sets:2,reps:{bal:'30-45 sec each',mass:'30 sec weighted',cut:'45-60 sec each'},muscles:['Obliques','Core','Shoulders'],
      video:'https://www.youtube.com/results?search_query=side+plank+proper+form',
-     instructions:'On your side, forearm on the floor, body in a straight line. Hold, keeping the hips high. Builds lateral core strength that protects your spine under load.',
+     instructions:'On your side, forearm on the floor, body in a straight line. Hold with the hips high.',
      tips:['Stack shoulders, hips, and feet','Push the floor away with the forearm','Squeeze the bottom-side obliques'],
      mistakes:['Hips sagging','Rolling forward or back','Holding breath']},
+  ],
+  grip:[
+    {id:'f-wrist-curl',name:'Dumbbell Wrist Curl',sets:2,reps:{bal:'15-20',mass:'12-15',cut:'20-25'},muscles:['Forearms'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+wrist+curl+proper+form',
+     instructions:'Forearms resting on your thighs or the bench, palms up, wrists hanging off the edge. Curl the dumbbells up using only the wrists.',
+     tips:['Let the dumbbell roll to the fingertips at the bottom','High reps — forearms are endurance muscles','Do the palms-down version too'],
+     mistakes:['Moving the forearms','Too heavy to get full range','Rushing']},
+    {id:'f-db-hold',name:'Dumbbell Static Hold',sets:2,reps:{bal:'30-45 sec',mass:'20-30 sec heavy',cut:'45-60 sec'},muscles:['Grip','Forearms','Traps'],
+     video:'https://www.youtube.com/results?search_query=dumbbell+static+hold+grip+strength',
+     instructions:'Hold your heaviest dumbbells at your sides with a crushing grip for time. Stand tall, shoulders packed.',
+     tips:['Simplest grip builder there is','Go until the grip genuinely fails','Works with lighter weight if you extend the time'],
+     mistakes:['Setting them down early','Slouching','Holding your breath']},
   ]
 };
-const FOCUS_LABELS={shoulders:'Shoulders',chest:'Chest',back:'Back',arms:'Arms',legs:'Legs (Quads)',glutes:'Glutes/Hams',core:'Core'};
+const FOCUS_LABELS={reardelts:'Rear Delts',sidedelts:'Side Delts',upperchest:'Upper Chest',midchest:'Mid Chest',lats:'Lats / Width',upperback:'Upper Back',biceps:'Biceps',triceps:'Triceps',quads:'Quads',hamstrings:'Hamstrings',glutes:'Glutes',calves:'Calves',core:'Core / Abs',grip:'Grip / Forearms'};
+const FOCUS_GROUPS={'Shoulders':['reardelts','sidedelts'],'Chest':['upperchest','midchest'],'Back':['lats','upperback'],'Arms':['biceps','triceps'],'Legs':['quads','hamstrings','glutes','calves'],'Other':['core','grip']};
+const FOCUS_NOTES={reardelts:'Best pick if pressing leaves your shoulders achy — rebalances front/rear delt development.',sidedelts:'Builds shoulder width and that capped look.',upperchest:'The most commonly underdeveloped chest region.',midchest:'Adds thickness through the mid and lower pecs.',lats:'Builds the V-taper and back width.',upperback:'Traps and rhomboids — thickness and posture.',biceps:'Direct arm flexor work beyond your rows and curls.',triceps:'Two-thirds of your arm size lives here.',quads:'Front-thigh size and knee-tracking strength.',hamstrings:'Your program is quad-heavy — this is the usual gap.',glutes:'Hip drive and posterior strength.',calves:'Stubborn and high-frequency — needs dedicated volume.',core:'Rotational and lateral core beyond planks.',grip:'Carries are gone from your program, so grip work lives here.'};
 const PAIRS={
   A:[['goblet-squat','db-bench'],['db-row','lat-raise'],['band-pull-apart','plank']],
   B:[['bss','incline-press'],['rdl','face-pull'],['hammer-curl','dead-bug']],
@@ -708,7 +832,11 @@ const EX_CATEGORIES={
   'f-rear-fly':'pull', 'f-band-lat':'shoulder', 'f-db-flye':'press', 'f-band-pushup':'press',
   'f-pullover':'pull', 'f-band-pulldown':'pull', 'f-conc-curl':'pull', 'f-oh-tricep':'press',
   'f-rev-lunge':'lower', 'f-heel-squat':'lower', 'f-sl-rdl':'lower', 'f-band-bridge':'lower',
-  'f-russian':'core', 'f-side-plank':'core'
+  'f-russian':'core', 'f-side-plank':'core',
+  'f-band-facepull':'pull', 'f-lean-lat':'shoulder', 'f-incline-flye':'press', 'f-low-high-flye':'press',
+  'f-shrug':'pull', 'f-high-row':'pull', 'f-incline-curl':'pull', 'f-skull':'press',
+  'f-band-curl-leg':'lower', 'f-hip-thrust':'lower', 'f-calf-raise':'lower', 'f-sl-calf':'lower',
+  'f-wrist-curl':'pull', 'f-db-hold':'pull'
 };
 const QUOTES=[
   {text:"The iron never lies to you. You can walk outside and get a sense of lies. But the iron never lies.",attr:"Henry Rollins"},
@@ -781,18 +909,39 @@ function setFocus(k){
   save();
   renderFocusChips();
   renderExerciseList(currentWorkoutLetter);
+  renderVolumeBreakdown();
+  if(S.focus&&focusPanelOpen)toggleFocusPanel(); // collapse after choosing
+}
+let focusPanelOpen=false;
+function toggleFocusPanel(){
+  focusPanelOpen=!focusPanelOpen;
+  const panel=document.getElementById('focusPanel');
+  const chev=document.getElementById('focusChevron');
+  panel.style.maxHeight=focusPanelOpen?panel.scrollHeight+'px':'0';
+  chev.style.transform=focusPanelOpen?'rotate(180deg)':'rotate(0deg)';
 }
 function renderFocusChips(){
   const wrap=document.getElementById('focusChips');
   if(!wrap)return;
-  wrap.innerHTML=Object.keys(FOCUS_LABELS).map(k=>
-    `<div class="focus-chip ${S.focus===k?'active':''}" onclick="setFocus('${k}')">${FOCUS_LABELS[k]}</div>`
+  wrap.innerHTML=Object.entries(FOCUS_GROUPS).map(([group,keys])=>
+    `<div style="width:100%;margin-bottom:8px">
+      <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px">${group}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${keys.map(k=>`<div class="focus-chip ${S.focus===k?'active':''}" onclick="setFocus('${k}')">${FOCUS_LABELS[k]}</div>`).join('')}
+      </div>
+    </div>`
   ).join('');
+  const tag=document.getElementById('focusActiveTag');
+  if(tag)tag.textContent=S.focus?FOCUS_LABELS[S.focus]:'None';
   const d=document.getElementById('focusDesc');
-  d.textContent=S.focus
-    ?`Adding 2 ${FOCUS_LABELS[S.focus]} accessories to the START of every workout — hit them while you're fresh. Run 4-8 weeks, tap again to turn off.`
-    :'Pick a lagging muscle to add 2 targeted accessory exercises to the start of every workout. Tap the active one to turn it off.';
+  if(S.focus){
+    const exs=FOCUS_POOLS[S.focus].map(e=>e.name).join(' + ');
+    d.innerHTML=`<strong style="color:var(--orange)">${FOCUS_LABELS[S.focus]} focus active.</strong> ${FOCUS_NOTES[S.focus]}<br><span style="color:var(--text3)">Adding ${exs} to the start of every workout. Run 4-8 weeks, then tap again to turn off.</span>`;
+  } else {
+    d.textContent='Pick a lagging area to add 2 targeted exercises to the start of every workout, while you are fresh. Tap the active one to turn it off.';
+  }
 }
+
 function setMode(m,el){
   S.mode=m;save();
   document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
@@ -1330,6 +1479,14 @@ function exportCSV(){
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;});
 
+let customPanelOpen=false;
+function toggleCustomPanel(){
+  customPanelOpen=!customPanelOpen;
+  const p=document.getElementById('customPanel');
+  const c=document.getElementById('customChevron');
+  p.style.maxHeight=customPanelOpen?'2000px':'0';
+  c.style.transform=customPanelOpen?'rotate(180deg)':'rotate(0deg)';
+}
 let currentCustomLetter='A';
 function showCustomize(letter,el){
   currentCustomLetter=letter;
@@ -1366,17 +1523,44 @@ function customSet(exId,field,val){
   S.customProgram[currentCustomLetter][exId][field]=field==='sets'?parseInt(val):val;
   save();renderVolumeBreakdown();
 }
+let swapModalExId=null;
 function showSwap(exId){
+  swapModalExId=exId;
   const all=getAllEx().filter(e=>e.id!==exId);
-  const pick=prompt('Paste exercise name to replace with, or cancel to keep current');
-  if(!pick)return;
-  const found=all.find(e=>e.name.toLowerCase()===pick.toLowerCase());
-  if(!found){alert('Exercise not found');return;}
+  const current=getAllEx().find(e=>e.id===exId);
+  const grouped={};
+  all.forEach(e=>{
+    const cat=EX_CATEGORIES[e.id]||'other';
+    if(!grouped[cat])grouped[cat]=[];
+    grouped[cat].push(e);
+  });
+  let html=`<div style="max-height:60vh;overflow-y:auto">`;
+  Object.entries(grouped).forEach(([cat,exs])=>{
+    html+=`<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:6px 0;font-weight:600">${cat.toUpperCase()}</div>`;
+    exs.forEach(e=>{
+      html+=`<div style="padding:8px 6px;cursor:pointer;border-radius:4px;font-size:13px;transition:all .2s" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''" onclick="confirmSwap('${e.id}')">
+        ${e.name} <span style="color:var(--text3);font-size:11px">${e.muscles.join(', ')}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  document.getElementById('swapModalBody').innerHTML=html;
+  document.getElementById('swapModal').classList.add('active');
+}
+function confirmSwap(newExId){
   if(!S.customProgram)S.customProgram={};
   if(!S.customProgram[currentCustomLetter])S.customProgram[currentCustomLetter]={};
-  if(!S.customProgram[currentCustomLetter][exId])S.customProgram[currentCustomLetter][exId]={};
-  S.customProgram[currentCustomLetter][exId].swapId=found.id;
-  save();showCustomize(currentCustomLetter,document.querySelector('[onclick*="showCustomize"][onclick*="'+currentCustomLetter+'"]'));renderVolumeBreakdown();
+  if(!S.customProgram[currentCustomLetter][swapModalExId])S.customProgram[currentCustomLetter][swapModalExId]={};
+  S.customProgram[currentCustomLetter][swapModalExId].swapId=newExId;
+  save();
+  document.getElementById('swapModal').classList.remove('active');
+  showCustomize(currentCustomLetter,document.querySelector('[onclick*="showCustomize"][onclick*="'+currentCustomLetter+'"]'));
+  renderVolumeBreakdown();
+}
+function closeSwapModal(){
+  document.getElementById('swapModal').classList.remove('active');
 }
 function removeCustom(exId){
   if(confirm('Remove this exercise from the workout?')){
