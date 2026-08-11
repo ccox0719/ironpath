@@ -83,15 +83,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .ex-arrow{color:var(--text3)}
 .session-overlay{position:fixed;inset:0;background:var(--bg);z-index:100;display:none;flex-direction:column;max-width:480px;margin:0 auto}
 .session-overlay.active{display:flex}
-.session-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.session-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
 .session-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:1px;flex:1}
 .session-timer{font-family:'DM Mono',monospace;font-size:14px;color:var(--orange)}
 .close-btn{cursor:pointer;color:var(--text2);padding:4px;line-height:0}
-.session-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
-.session-footer{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0}
-.ex-session-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.ex-session-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);cursor:pointer}
-.ex-session-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700}
+.session-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 14px 20px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+.session-footer{padding:10px 14px calc(10px + env(safe-area-inset-bottom,0));border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.ex-session-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:visible;flex-shrink:0}
+.ex-session-header{padding:11px 14px 9px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+.ex-session-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;line-height:1.15}
 .ex-session-target{font-size:12px;color:var(--orange)}
 .sets-row{display:grid;grid-template-columns:32px 1fr 1fr 40px;gap:8px;padding:10px 16px;align-items:center;border-bottom:1px solid var(--border)}
 .sets-row:last-child{border-bottom:none}
@@ -165,6 +165,34 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .complete-overlay.active{display:flex}
 .complete-icon{font-size:64px;animation:pop .4s ease}
 @keyframes pop{0%{transform:scale(0)}80%{transform:scale(1.15)}100%{transform:scale(1)}}
+.pill-row{display:flex;flex-wrap:wrap;gap:7px;padding:0 14px 12px;align-items:center}
+.set-pill{width:44px;height:44px;border-radius:10px;border:1px solid var(--border2);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text3);transition:all .18s;user-select:none}
+.set-pill:active{transform:scale(.92)}
+.set-pill.done{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 0 12px rgba(61,190,120,.3)}
+.pill-add{width:44px;height:44px;border-radius:10px;border:1px dashed var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--text3);transition:all .18s}
+.pill-add:active{border-color:var(--orange);color:var(--orange)}
+.pill-weight{width:60px;height:44px;border-radius:10px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;text-align:center;outline:none;margin-left:auto;transition:border-color .2s}
+.pill-weight:focus{border-color:var(--orange)}
+.pill-weight::placeholder{color:var(--text3);font-size:11px}
+.ss-group{display:flex;flex-direction:column;gap:8px;flex-shrink:0;margin-bottom:6px}
+.ss-block{padding:9px 12px;background:var(--card2);border:1px solid var(--border2);border-radius:8px;transition:all .3s;flex-shrink:0}
+.ss-block.done{border-color:var(--green);background:rgba(61,190,120,.07)}
+.ss-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ss-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);transition:color .3s}
+.ss-block.done .ss-label{color:var(--green)}
+.ss-status{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ss-count{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);transition:color .3s}
+.ss-block.done .ss-count{color:var(--green)}
+.ss-check{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0);transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+.ss-block.done .ss-check{opacity:1;transform:scale(1)}
+.ss-bar{height:3px;background:var(--border2);border-radius:3px;margin-top:7px;overflow:hidden}
+.ss-fill{height:100%;background:var(--orange);border-radius:3px;transition:width .35s ease,background .3s}
+.ss-block.done .ss-fill{background:var(--green)}
+.ss-hint{font-size:10px;color:var(--text3);margin-top:5px;letter-spacing:.5px}
+.ss-block.done .ss-hint{color:var(--green);opacity:.7}
+.ss-block.done{padding-bottom:7px}
+.quick-btn.ready{animation:readyPulse 1.8s ease-in-out infinite}
+@keyframes readyPulse{0%,100%{box-shadow:0 0 0 0 rgba(61,190,120,0)}50%{box-shadow:0 0 0 6px rgba(61,190,120,.18)}}
 .swap-modal{position:fixed;inset:0;background:rgba(8,8,8,.96);z-index:400;display:none;align-items:center;justify-content:center;padding:16px}
 .swap-modal.active{display:flex}
 .swap-modal-content{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-width:100%;width:100%;max-height:80vh;display:flex;flex-direction:column}
@@ -203,7 +231,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
   <!-- HEADER -->
   <header class="header">
-    <div class="header-logo">IRON <span>PATH</span></div>
+    <div class="header-logo">IRON <span>PATH</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:0;margin-left:6px;font-weight:400;vertical-align:middle">b7</span></div>
     <div class="header-right">
       <div class="icon-btn" onclick="showWarmupPanel()" title="Warm-up">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -359,6 +387,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
           <div class="toggle on" id="togRest" onclick="this.classList.toggle('on')"></div>
         </div>
         <div class="settings-row">
+          <div><div class="settings-label">Quick Log Mode</div><div class="settings-sub">Tap set buttons instead of typing weight &amp; reps</div></div>
+          <div class="toggle" id="togQuick" onclick="toggleQuickLog(this)"></div>
+        </div>
+        <div class="settings-row">
           <div><div class="settings-label">Overload Tips</div><div class="settings-sub">Weight increase suggestions</div></div>
           <div class="toggle on" id="togOverload" onclick="this.classList.toggle('on')"></div>
         </div>
@@ -403,13 +435,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
       <div class="card">
         <button class="settings-btn" onclick="exportCSV()">📤 Export Workouts (CSV)</button>
         <button class="settings-btn" onclick="installPWA()">📱 Add to Home Screen</button>
+        <button class="settings-btn" onclick="forceRefresh()">🔄 Force Update (clear cache)</button>
         <button class="settings-btn" style="color:var(--red);border-color:rgba(224,65,62,.3);margin-bottom:0" onclick="confirmReset()">🗑 Reset All Data</button>
       </div>
 
       <div class="section-label">About</div>
       <div class="card">
         <div class="settings-row" style="border:none">
-          <div><div class="settings-label">Iron Path</div><div class="settings-sub">v1.0 · Dumbbell + Bands Strength Training</div></div>
+          <div><div class="settings-label">Iron Path</div><div class="settings-sub">Build b7 · Dumbbell + Bands Strength Training</div></div>
         </div>
       </div>
     </div>
@@ -452,7 +485,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   </div>
   <div class="session-body" id="sessionBody"></div>
   <div class="session-footer">
-    <button class="quick-btn" onclick="finishWorkout()">FINISH WORKOUT ✓</button>
+    <button class="quick-btn" id="finishBtn" style="padding:14px;font-size:17px" onclick="finishWorkout()">FINISH WORKOUT ✓</button>
   </div>
 </div>
 
@@ -880,7 +913,7 @@ let S = JSON.parse(localStorage.getItem('ironpath_v2')||'null') || {
   settings:{restSecs:90,autoRest:true,overloadTips:true,deload:false}
 };
 
-S.mode=S.mode||'bal';S.focus=S.focus||null;S.customProgram=S.customProgram||{}; // migrate older saves
+S.mode=S.mode||'bal';S.focus=S.focus||null;S.customProgram=S.customProgram||{};if(S.quickLog===undefined)S.quickLog=true; // migrate older saves
 function save(){localStorage.setItem('ironpath_v2',JSON.stringify(S));}
 
 function calcCategoryVolume(){
@@ -907,12 +940,19 @@ const MODE_INFO={
 function setFocus(k){
   S.focus=(S.focus===k)?null:k; // tap again to turn off
   save();
+  const tq=document.getElementById('togQuick');
+  if(tq)tq.classList.toggle('on',!!S.quickLog);
   renderFocusChips();
   renderExerciseList(currentWorkoutLetter);
   renderVolumeBreakdown();
   if(S.focus&&focusPanelOpen)toggleFocusPanel(); // collapse after choosing
 }
 let focusPanelOpen=false;
+function toggleQuickLog(el){
+  el.classList.toggle('on');
+  S.quickLog=el.classList.contains('on');
+  save();
+}
 function toggleFocusPanel(){
   focusPanelOpen=!focusPanelOpen;
   const panel=document.getElementById('focusPanel');
@@ -1149,14 +1189,33 @@ let sessionStart=null, sessionInt=null, restInt=null, restLeft=0;
 let activeLetter='A';
 
 let activeSessionExs=[];
-function sessionCardHTML(ex){
+function sessionCardHTML(ex,gi){
   if(!ex)return'';
+  if(S.quickLog){
+    const pills=Array.from({length:ex.sets},(_,j)=>
+      `<div class="set-pill" data-group="${gi}" id="pill-${ex.id}-${j}" onclick="tapSet('${ex.id}',${j},this)">${j+1}</div>`
+    ).join('');
+    return `<div class="ex-session-card">
+      <div class="ex-session-header" onclick="showDetail('${ex.id}')">
+        <div>
+          <div class="ex-session-name">${ex.name}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${ex.muscles.join(' · ')}</div>
+        </div>
+        <div class="ex-session-target">${ex.sets}×${getReps(ex)}</div>
+      </div>
+      <div class="pill-row">
+        ${pills}
+        <div class="pill-add" onclick="addPill('${ex.id}',${gi},this)">+</div>
+        <input class="pill-weight" type="number" placeholder="lbs" id="qw-${ex.id}" inputmode="decimal" title="Optional — logs volume and PRs">
+      </div>
+    </div>`;
+  }
   const rows=Array.from({length:ex.sets},(_,j)=>`
       <div class="sets-row" id="sr-${ex.id}-${j}">
         <div class="set-num">${j+1}</div>
         <input class="set-input" type="number" placeholder="lbs" id="sw-${ex.id}-${j}" inputmode="decimal">
         <input class="set-input" type="number" placeholder="reps" id="sr2-${ex.id}-${j}" inputmode="numeric">
-        <div class="check-btn" onclick="checkSet('${ex.id}',${j},this)">✓</div>
+        <div class="check-btn" data-group="${gi}" onclick="checkSet('${ex.id}',${j},this)">✓</div>
       </div>`).join('');
   return `<div class="ex-session-card">
       <div class="ex-session-header" onclick="showDetail('${ex.id}')">
@@ -1174,6 +1233,26 @@ function sessionCardHTML(ex){
       <textarea class="note-input" placeholder="Notes for this exercise..." rows="1"></textarea>
     </div>`;
 }
+function tapSet(exId,j,el){
+  el.classList.toggle('done');
+  const gi=el.dataset.group;
+  const justDone=el.classList.contains('done');
+  const complete=updateGroupProgress(gi);
+  if(justDone&&document.getElementById('togRest').classList.contains('on')&&!complete){
+    showRestTimer(getRestTime(exId,activeLetter));
+  }
+}
+function addPill(exId,gi,btn){
+  const existing=[...document.querySelectorAll(`[id^="pill-${exId}-"]`)].length;
+  const p=document.createElement('div');
+  p.className='set-pill';
+  p.dataset.group=gi;
+  p.id=`pill-${exId}-${existing}`;
+  p.textContent=existing+1;
+  p.setAttribute('onclick',`tapSet('${exId}',${existing},this)`);
+  btn.parentNode.insertBefore(p,btn);
+  updateGroupProgress(gi);
+}
 function startWorkout(){
   activeLetter=S.nextWorkout;
   const base=WORKOUTS[activeLetter];
@@ -1189,8 +1268,22 @@ function startWorkout(){
   document.getElementById('sessionBody').innerHTML=groups.map((g,gi)=>{
     const isFocus=focus.length&&gi===0;
     const label=isFocus?'FOCUS BLOCK — do this first, while fresh':'SUPERSET '+(gi+(focus.length?0:1));
-    return `<div class="section-label" style="padding:6px 0 2px">${label} · ALTERNATE SETS · REST 60-75s</div>`+g.map(sessionCardHTML).join('');
+    const total=g.reduce((a,e)=>a+e.sets,0);
+    return `<div class="ss-block" id="ssb-${gi}" data-group="${gi}">
+      <div class="ss-head">
+        <div class="ss-label">${label}</div>
+        <div class="ss-status" id="ssStatus-${gi}">
+          <span class="ss-count" id="ssCount-${gi}">0/${total}</span>
+          <span class="ss-check" id="ssCheck-${gi}">✓</span>
+        </div>
+      </div>
+      <div class="ss-bar"><div class="ss-fill" id="ssFill-${gi}" style="width:0%"></div></div>
+      <div class="ss-hint">Alternate sets · rest between</div>
+    </div>
+    <div class="ss-group">${g.map(e=>sessionCardHTML(e,gi)).join('')}</div>`;
   }).join('');
+  const fb=document.getElementById('finishBtn');
+  if(fb)fb.classList.remove('ready');
   sessionStart=Date.now();
   sessionInt=setInterval(()=>{
     const e=Math.floor((Date.now()-sessionStart)/1000);
@@ -1215,9 +1308,37 @@ function addSetRow(exId,btn){
 
 function checkSet(exId,j,btn){
   btn.classList.toggle('done');
-  if(btn.classList.contains('done')&&document.getElementById('togRest').classList.contains('on')){
-    const secs=getRestTime(exId,activeLetter);
-    showRestTimer(secs);
+  const gi=btn.dataset.group;
+  const justDone=btn.classList.contains('done');
+  const complete=updateGroupProgress(gi);
+  if(justDone&&document.getElementById('togRest').classList.contains('on')&&!complete){
+    showRestTimer(getRestTime(exId,activeLetter));
+  }
+}
+function updateGroupProgress(gi){
+  if(gi===undefined||gi===null)return false;
+  const btns=[...document.querySelectorAll(`.check-btn[data-group="${gi}"],.set-pill[data-group="${gi}"]`)];
+  const done=btns.filter(b=>b.classList.contains('done')).length;
+  const total=btns.length;
+  const block=document.getElementById('ssb-'+gi);
+  const fill=document.getElementById('ssFill-'+gi);
+  const count=document.getElementById('ssCount-'+gi);
+  if(count)count.textContent=`${done}/${total}`;
+  if(fill)fill.style.width=(total?(done/total)*100:0)+'%';
+  const wasComplete=block&&block.classList.contains('done');
+  const isComplete=total>0&&done===total;
+  if(block)block.classList.toggle('done',isComplete);
+  if(isComplete&&!wasComplete){
+    if(navigator.vibrate)navigator.vibrate([40,60,40]);
+    checkAllGroupsDone();
+  }
+  return isComplete;
+}
+function checkAllGroupsDone(){
+  const blocks=[...document.querySelectorAll('.ss-block')];
+  if(blocks.length&&blocks.every(b=>b.classList.contains('done'))){
+    const btn=document.getElementById('finishBtn');
+    if(btn)btn.classList.add('ready');
   }
 }
 
@@ -1238,6 +1359,23 @@ function finishWorkout(){
   const loggedExercises=[];
 
   exs.forEach(ex=>{
+    if(S.quickLog){
+      const pills=[...document.querySelectorAll(`[id^="pill-${ex.id}-"]`)];
+      const doneCount=pills.filter(p=>p.classList.contains('done')).length;
+      if(!doneCount)return;
+      totalSets+=doneCount;
+      const w=parseFloat(document.getElementById(`qw-${ex.id}`)?.value||0);
+      const repGuess=parseInt(String(getReps(ex)).match(/\d+/)?.[0]||0);
+      const sets=[];
+      for(let k=0;k<doneCount;k++)sets.push({w:w||null,r:repGuess||null});
+      if(w&&repGuess){
+        totalVol+=w*repGuess*doneCount;
+        const existW=S.prs[ex.id]?parseFloat(S.prs[ex.id]):0;
+        if(w>existW)S.prs[ex.id]=`${w} lbs × ${repGuess}`;
+      }
+      loggedExercises.push({id:ex.id,sets});
+      return;
+    }
     const maxSets=(setCounts[ex.id]||ex.sets)+2;
     const sets=[];
     for(let j=0;j<maxSets;j++){
@@ -1582,6 +1720,16 @@ function clearRestCustom(exId){
     save();showCustomize(currentCustomLetter,document.querySelector('[onclick*="showCustomize"]'));
   }
 }
+async function forceRefresh(){
+  try{
+    if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}
+    if(navigator.serviceWorker){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+  }catch(e){}
+  location.reload(true);
+}
 function installPWA(){
   if(deferredPrompt){deferredPrompt.prompt();}
   else{alert('To install: open in Chrome → tap the menu → "Add to Home Screen"');}
@@ -1592,20 +1740,31 @@ function confirmReset(){
   }
 }
 
-// Inline Service Worker for offline support
+// Service worker: network-first so updates land immediately
 if('serviceWorker' in navigator){
   const swCode=`
-    const C='ip-v1';
+    const C='ip-b7';
     self.addEventListener('install',e=>{self.skipWaiting();});
-    self.addEventListener('activate',e=>{self.clients.claim();});
+    self.addEventListener('activate',e=>{
+      e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
+      self.clients.claim();
+    });
     self.addEventListener('fetch',e=>{
       if(e.request.method!=='GET')return;
-      e.respondWith(caches.open(C).then(cache=>
-        fetch(e.request).then(r=>{cache.put(e.request,r.clone());return r;}).catch(()=>caches.match(e.request))
-      ));
+      e.respondWith(
+        fetch(e.request).then(r=>{
+          const copy=r.clone();
+          caches.open(C).then(c=>c.put(e.request,copy));
+          return r;
+        }).catch(()=>caches.match(e.request))
+      );
     });`;
   const blob=new Blob([swCode],{type:'application/javascript'});
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+  // Drop caches from earlier builds
+  if(window.caches){
+    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b7')caches.delete(k);}));
+  }
 }
 
 init();
