@@ -295,6 +295,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
         <div class="chart-wrap" style="margin-top:14px" id="volChart"></div>
       </div>
 
+      <div class="section-label">Weekly Volume Breakdown</div>
+      <div class="card">
+        <div id="volBreakdown"></div>
+      </div>
+
       <div class="section-label">Consistency</div>
       <div class="card">
         <div style="display:flex;gap:5px;flex-wrap:wrap" id="consistencyGrid"></div>
@@ -349,6 +354,24 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
             <option value="60">60s</option><option value="90" selected>90s</option><option value="120">120s</option><option value="180">180s</option>
           </select>
         </div>
+      </div>
+
+      <div class="section-label">Customize Program</div>
+      <div class="card">
+        <div class="section-label" style="margin-bottom:8px">Select a workout to edit exercises</div>
+        <div class="workout-tabs" style="margin-bottom:12px">
+          <div class="w-tab" onclick="showCustomize('A',this)">A</div>
+          <div class="w-tab" onclick="showCustomize('B',this)">B</div>
+          <div class="w-tab" onclick="showCustomize('C',this)">C</div>
+          <div class="w-tab" onclick="showCustomize('D',this)">D</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg);border-radius:6px;margin-bottom:10px;line-height:1.5">
+          💡 Edit sets, reps, or rest time per exercise. Leave rest blank to use the mode default (currently <strong>${MODE_INFO[S.mode].rest}s</strong>).
+        </div>
+        <div id="customizeView"></div>
+        <button class="quick-btn" style="margin-top:12px;background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="resetCustom()">
+          ↺ Reset Program to Default
+        </button>
       </div>
 
       <div class="section-label">Data</div>
@@ -667,6 +690,26 @@ const PAIRS={
   D:[['band-squat','band-chest-press'],['band-row','db-thruster'],['band-curl','renegade-row']]
 };
 
+
+const EX_CATEGORIES={
+  // Pressing: horizontal and vertical
+  'db-bench':'press', 'incline-press':'press', 'pushup':'press', 'seated-press':'press',
+  'band-chest-press':'press', 'db-thruster':'press',
+  // Pulling: horizontal and vertical
+  'db-row':'pull', 'face-pull':'pull', 'chest-row':'pull', 'band-row':'pull', 'band-pull-apart':'pull',
+  'band-curl':'pull', 'hammer-curl':'pull', 'band-pushdown':'pull',
+  // Lower body: quad and hinge patterns
+  'goblet-squat':'lower', 'bss':'lower', 'step-up':'lower', 'band-squat':'lower',
+  'rdl':'lower',
+  // Core/accessories
+  'plank':'core', 'dead-bug':'core', 'band-pallof':'core', 'renegade-row':'core',
+  'lat-raise':'shoulder',
+  // Focus exercises
+  'f-rear-fly':'pull', 'f-band-lat':'shoulder', 'f-db-flye':'press', 'f-band-pushup':'press',
+  'f-pullover':'pull', 'f-band-pulldown':'pull', 'f-conc-curl':'pull', 'f-oh-tricep':'press',
+  'f-rev-lunge':'lower', 'f-heel-squat':'lower', 'f-sl-rdl':'lower', 'f-band-bridge':'lower',
+  'f-russian':'core', 'f-side-plank':'core'
+};
 const QUOTES=[
   {text:"The iron never lies to you. You can walk outside and get a sense of lies. But the iron never lies.",attr:"Henry Rollins"},
   {text:"Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.",attr:"Rikki Rogers"},
@@ -709,8 +752,24 @@ let S = JSON.parse(localStorage.getItem('ironpath_v2')||'null') || {
   settings:{restSecs:90,autoRest:true,overloadTips:true,deload:false}
 };
 
-S.mode=S.mode||'bal';S.focus=S.focus||null; // migrate older saves
+S.mode=S.mode||'bal';S.focus=S.focus||null;S.customProgram=S.customProgram||{}; // migrate older saves
 function save(){localStorage.setItem('ironpath_v2',JSON.stringify(S));}
+
+function calcCategoryVolume(){
+  const cats={press:0,pull:0,lower:0,core:0,shoulder:0};
+  Object.keys(WORKOUTS).forEach(l=>{
+    WORKOUTS[l].forEach(e=>{
+      const cust=getExerciseOverride(l,e.id);
+      if(cust?.removed)return;
+      const custom=applyCustom(e,l);
+      const swap=getExerciseForSession(e.id,l);
+      const actual=swap||e;
+      const cat=EX_CATEGORIES[actual.id]||'other';
+      if(cats.hasOwnProperty(cat))cats[cat]+=custom.sets;
+    });
+  });
+  return cats;
+}
 function getReps(ex){return typeof ex.reps==='string'?ex.reps:(ex.reps[S.mode]||ex.reps.bal);}
 const MODE_INFO={
   cut:{label:'DEFINITION',desc:'Higher reps (12-20), lighter weight, 45-60s superset rests — endurance and definition.',rest:60},
@@ -731,8 +790,8 @@ function renderFocusChips(){
   ).join('');
   const d=document.getElementById('focusDesc');
   d.textContent=S.focus
-    ?`Adding 2 extra ${FOCUS_LABELS[S.focus]} accessories to every workout. Run this for 4-8 weeks, then tap again to turn it off.`
-    :'Pick a lagging muscle to add 2 targeted accessory exercises to the end of every workout. Tap the active one to turn it off.';
+    ?`Adding 2 ${FOCUS_LABELS[S.focus]} accessories to the START of every workout — hit them while you're fresh. Run 4-8 weeks, tap again to turn off.`
+    :'Pick a lagging muscle to add 2 targeted accessory exercises to the start of every workout. Tap the active one to turn it off.';
 }
 function setMode(m,el){
   S.mode=m;save();
@@ -744,6 +803,9 @@ function setMode(m,el){
     const target=MODE_INFO[m].rest;
     sel.value=opts.reduce((a,b)=>Math.abs(b-target)<Math.abs(a-target)?b:a);}
   renderExerciseList(currentWorkoutLetter);
+  if(document.getElementById('customizeView')&&document.getElementById('customizeView').innerHTML){
+    showCustomize(currentCustomLetter,document.querySelector('[onclick*="showCustomize"]'));
+  }
 }
 
 // ===================== HELPERS =====================
@@ -814,6 +876,7 @@ function init(){
   buildVolumeChart();
   buildConsistency();
   renderBwHistory();
+  renderVolumeBreakdown();
   renderBadges();
   renderExerciseList(S.nextWorkout);
   renderLibrary();
@@ -828,7 +891,7 @@ function switchTab(id,el){
   el.classList.add('active');
 }
 
-let currentWorkoutLetter=S.nextWorkout;
+let currentWorkoutLetter='A';
 function switchWorkout(letter,el){
   currentWorkoutLetter=letter;
   document.querySelectorAll('.w-tab').forEach(t=>t.classList.remove('active'));
@@ -842,20 +905,29 @@ function renderExerciseList(letter){
   const focus=getFocusExs();
   const labelOf={};
   (PAIRS[letter]||[]).forEach((p,pi)=>p.forEach((id,ei)=>labelOf[id]=(pi+1)+(ei===0?'A':'B')));
-  const exs=base.concat(focus);
+  const exs=focus.concat(base);
   const totalSets=exs.reduce((a,e)=>a+e.sets,0);
   const est=Math.round(totalSets*2.2+4);
   document.getElementById('exerciseList').innerHTML=
     `<div style="font-size:12px;color:var(--text2);padding:2px 2px 10px;line-height:1.5">⏱ ~${est} min · 3 supersets — alternate the paired exercises (1A ↔ 1B), resting 60-75s between sets</div>`+
     exs.map((ex,i)=>{
-      const isFocus=i>=base.length;
-      const tag=isFocus?'★':(labelOf[ex.id]||'0'+(i+1));
-      return `<div class="exercise-card" onclick="showDetail('${ex.id}')" ${isFocus?'style="border-color:var(--orange-glow)"':''}>
+      const isFocus=i<focus.length;
+      const base=WORKOUTS[currentWorkoutLetter]||[];
+      const isInBase=base.find(x=>x.id===ex.id);
+      const custOverride=getExerciseOverride(currentWorkoutLetter,ex.id);
+      if(isInBase&&custOverride?.removed)return '';
+      const tag=isFocus?'★':(labelOf[ex.id]||'0'+(i+1-focus.length));
+      const custom=isInBase?applyCustom(ex,currentWorkoutLetter):ex;
+      const swapId=isInBase?getCustomProgram()[currentWorkoutLetter]?.[ex.id]?.swapId:null;
+      const swapped=swapId?getAllEx().find(x=>x.id===swapId):null;
+      const displayEx=swapped||ex;
+      const customTag=swapped||custom.sets!==ex.sets||custom.reps!==getReps(ex)?'<span style="color:var(--orange);font-size:9px;letter-spacing:1px">CUSTOM</span>':'';
+      return `<div class="exercise-card" onclick="showDetail('${displayEx.id}')" ${isFocus?'style="border-color:var(--orange-glow)"':''}>
       <div class="ex-header">
         <div class="ex-num" ${isFocus?'style="background:var(--orange-dim);color:var(--orange)"':''}>${tag}</div>
         <div class="ex-info">
-          <div class="ex-name">${ex.name}${isFocus?' <span style="font-size:9px;color:var(--orange);letter-spacing:1px;vertical-align:middle">FOCUS</span>':''}</div>
-          <div class="ex-sets">${ex.sets} sets × ${getReps(ex)}</div>
+          <div class="ex-name">${displayEx.name}${isFocus?' <span style="font-size:9px;color:var(--orange);letter-spacing:1px;vertical-align:middle">FOCUS</span>':''}${customTag}</div>
+          <div class="ex-sets">${custom.sets} sets × ${getReps(custom)}</div>
           <div class="ex-muscles">${ex.muscles.map(m=>`<span class="muscle-chip">${m}</span>`).join('')}</div>
         </div>
         <div class="ex-arrow"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -929,6 +1001,7 @@ let activeLetter='A';
 
 let activeSessionExs=[];
 function sessionCardHTML(ex){
+  if(!ex)return'';
   const rows=Array.from({length:ex.sets},(_,j)=>`
       <div class="sets-row" id="sr-${ex.id}-${j}">
         <div class="set-num">${j+1}</div>
@@ -961,12 +1034,12 @@ function startWorkout(){
   const leftovers=base.filter(e=>!paired.has(e.id));
   if(leftovers.length)groups.push(leftovers);
   const focus=getFocusExs();
-  if(focus.length)groups.push(focus);
+  if(focus.length)groups.unshift(focus);
   activeSessionExs=groups.flat();
   document.getElementById('sessionTitle').textContent=`WORKOUT ${activeLetter}`;
   document.getElementById('sessionBody').innerHTML=groups.map((g,gi)=>{
-    const isFocus=focus.length&&gi===groups.length-1;
-    const label=isFocus?'FOCUS BLOCK':'SUPERSET '+(gi+1);
+    const isFocus=focus.length&&gi===0;
+    const label=isFocus?'FOCUS BLOCK — do this first, while fresh':'SUPERSET '+(gi+(focus.length?0:1));
     return `<div class="section-label" style="padding:6px 0 2px">${label} · ALTERNATE SETS · REST 60-75s</div>`+g.map(sessionCardHTML).join('');
   }).join('');
   sessionStart=Date.now();
@@ -994,7 +1067,7 @@ function addSetRow(exId,btn){
 function checkSet(exId,j,btn){
   btn.classList.toggle('done');
   if(btn.classList.contains('done')&&document.getElementById('togRest').classList.contains('on')){
-    const secs=parseInt(document.getElementById('restSecs').value||90);
+    const secs=getRestTime(exId,activeLetter);
     showRestTimer(secs);
   }
 }
@@ -1099,6 +1172,78 @@ function buildConsistency(){
   container.innerHTML=html;
 }
 
+
+
+function getCustomProgram(){
+  return S.customProgram||{};
+}
+function getExerciseOverride(letter,exId){
+  const cust=getCustomProgram()[letter]||{};
+  return cust[exId]||null;
+}
+function applyCustom(ex,letter){
+  const override=getExerciseOverride(letter,ex.id);
+  if(!override)return ex;
+  return{...ex,sets:override.sets||ex.sets,reps:override.reps||ex.reps,swapId:override.swapId};
+}
+
+function getRestTime(exId,letter){
+  const custom=getExerciseOverride(letter,exId);
+  if(custom?.rest)return parseInt(custom.rest);
+  return MODE_INFO[S.mode]?.rest||90;
+}
+function getExerciseForSession(exId,letter){
+  if(!exId)return null;
+  const cust=getCustomProgram()[letter]||{};
+  const swap=cust[exId]?.swapId;
+  if(swap)return getAllEx().find(e=>e.id===swap)||getAllEx().find(e=>e.id===exId);
+  return getAllEx().find(e=>e.id===exId);
+}
+function isCustomized(letter){
+  const c=getCustomProgram()[letter];
+  return c&&Object.keys(c).length>0;
+}
+function renderVolumeBreakdown(){
+  const cats=calcCategoryVolume();
+  const totalSets=Object.values(cats).reduce((a,b)=>a+b,0);
+  const ratios={
+    press:cats.press,pull:cats.pull,lower:cats.lower,core:cats.core,shoulder:cats.shoulder
+  };
+  const pressToP=(cats.press/cats.pull).toFixed(2);
+  const balance=cats.press<=cats.pull+2?'✓ BALANCED':'⚠ PRESS-HEAVY';
+  const html=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="text-align:center;padding:10px;background:var(--card2);border-radius:8px">
+        <div style="font-family:'Barlow Condensed';font-size:24px;font-weight:700;color:var(--orange)">${cats.press}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:.5px;text-transform:uppercase">PRESSING SETS</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--card2);border-radius:8px">
+        <div style="font-family:'Barlow Condensed';font-size:24px;font-weight:700;color:var(--blue)">${cats.pull}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:.5px;text-transform:uppercase">PULLING SETS</div>
+      </div>
+    </div>
+    <div style="padding:10px;background:${cats.press>cats.pull+2?'rgba(224,65,62,.08);border-color:rgba(224,65,62,.2)':'rgba(61,190,120,.08);border-color:rgba(61,190,120,.2)'};border:1px solid;border-radius:8px;font-size:13px;color:${cats.press>cats.pull+2?'var(--red)':'var(--green)'};line-height:1.6">
+      <strong>${balance}</strong><br>
+      Press:Pull ratio is ${pressToP}:1 (ideal is ~1:1 or 1:1.2)
+      ${cats.press>cats.pull+2?'<br>→ Consider adding rear delt focus or cutting a press exercise.':'<br>→ Your press-pull balance is solid.'}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;font-size:12px">
+      <div style="padding:8px;background:var(--card2);border-radius:6px;text-align:center">
+        <div style="font-weight:600;color:var(--text)">${cats.lower}</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:2px">LOWER</div>
+      </div>
+      <div style="padding:8px;background:var(--card2);border-radius:6px;text-align:center">
+        <div style="font-weight:600;color:var(--text)">${cats.core}</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:2px">CORE</div>
+      </div>
+      <div style="padding:8px;background:var(--card2);border-radius:6px;text-align:center">
+        <div style="font-weight:600;color:var(--text)">${cats.shoulder}</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:2px">REAR DELT</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('volBreakdown').innerHTML=html;
+}
 function logBodyweight(){
   const val=document.getElementById('bwInput').value;
   if(!val)return;
@@ -1184,6 +1329,75 @@ function exportCSV(){
 // ===================== PWA / MISC =====================
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;});
+
+let currentCustomLetter='A';
+function showCustomize(letter,el){
+  currentCustomLetter=letter;
+  document.querySelectorAll('[onclick*="showCustomize"]').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const base=WORKOUTS[letter];
+  const cust=getCustomProgram()[letter]||{};
+  const html=base.map((e,i)=>{
+    const override=cust[e.id];
+    const swapId=override?.swapId;
+    const actualEx=swapId?getAllEx().find(x=>x.id===swapId)||e:e;
+    const custom=override?`<span style="color:var(--orange);font-size:10px;letter-spacing:1px">CUSTOM</span>`:'';
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:500">${actualEx.name}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">
+          <input type="number" value="${override?.sets||e.sets}" onchange="customSet('${e.id}','sets',this.value)" style="width:35px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:4px;color:var(--text);font-size:11px;text-align:center"> sets × 
+          <input type="text" value="${override?.reps||getReps(e)}" onchange="customSet('${e.id}','reps',this.value)" style="width:60px;background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:4px;color:var(--text);font-size:11px;text-align:center"> reps
+          ${custom}
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;flex-direction:column">
+        <button class="settings-btn" style="width:auto;padding:4px 8px;margin:0;font-size:11px" onclick="showSwap('${e.id}')">Swap</button>
+        <button class="settings-btn" style="width:auto;padding:4px 8px;margin:0;font-size:11px;border-color:rgba(224,65,62,.3);color:var(--red)" onclick="removeCustom('${e.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('customizeView').innerHTML=html;
+}
+function customSet(exId,field,val){
+  if(!S.customProgram)S.customProgram={};
+  if(!S.customProgram[currentCustomLetter])S.customProgram[currentCustomLetter]={};
+  if(!S.customProgram[currentCustomLetter][exId])S.customProgram[currentCustomLetter][exId]={};
+  S.customProgram[currentCustomLetter][exId][field]=field==='sets'?parseInt(val):val;
+  save();renderVolumeBreakdown();
+}
+function showSwap(exId){
+  const all=getAllEx().filter(e=>e.id!==exId);
+  const pick=prompt('Paste exercise name to replace with, or cancel to keep current');
+  if(!pick)return;
+  const found=all.find(e=>e.name.toLowerCase()===pick.toLowerCase());
+  if(!found){alert('Exercise not found');return;}
+  if(!S.customProgram)S.customProgram={};
+  if(!S.customProgram[currentCustomLetter])S.customProgram[currentCustomLetter]={};
+  if(!S.customProgram[currentCustomLetter][exId])S.customProgram[currentCustomLetter][exId]={};
+  S.customProgram[currentCustomLetter][exId].swapId=found.id;
+  save();showCustomize(currentCustomLetter,document.querySelector('[onclick*="showCustomize"][onclick*="'+currentCustomLetter+'"]'));renderVolumeBreakdown();
+}
+function removeCustom(exId){
+  if(confirm('Remove this exercise from the workout?')){
+    if(!S.customProgram)S.customProgram={};
+    if(!S.customProgram[currentCustomLetter])S.customProgram[currentCustomLetter]={};
+    if(!S.customProgram[currentCustomLetter][exId])S.customProgram[currentCustomLetter][exId]={};
+    S.customProgram[currentCustomLetter][exId].removed=true;
+    save();showCustomize(currentCustomLetter,document.querySelector('[onclick*="showCustomize"][onclick*="'+currentCustomLetter+'"]'));renderVolumeBreakdown();
+  }
+}
+function resetCustom(){
+  if(confirm('Reset entire program to default? All custom edits will be lost.')){
+    S.customProgram={};save();init();alert('Program reset to defaults.');
+  }
+}
+function clearRestCustom(exId){
+  if(S.customProgram[currentCustomLetter]&&S.customProgram[currentCustomLetter][exId]){
+    delete S.customProgram[currentCustomLetter][exId].rest;
+    save();showCustomize(currentCustomLetter,document.querySelector('[onclick*="showCustomize"]'));
+  }
+}
 function installPWA(){
   if(deferredPrompt){deferredPrompt.prompt();}
   else{alert('To install: open in Chrome → tap the menu → "Add to Home Screen"');}
