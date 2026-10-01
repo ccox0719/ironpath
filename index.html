@@ -224,6 +224,17 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .page.active>*:nth-child(5){animation-delay:.14s}
 .page.active>*:nth-child(6){animation-delay:.17s}
 .page.active>*:nth-child(7){animation-delay:.2s}
+.recovery-card{border-left:3px solid var(--orange)}
+.recovery-card.ready{border-left-color:var(--green)}
+.recovery-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;text-transform:uppercase}
+.recovery-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.recovery-chip{font-size:10px;color:var(--text2);background:var(--card2);border:1px solid var(--border2);border-radius:20px;padding:5px 8px}
+.session-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.session-choice button{border:1px solid var(--border2);border-radius:9px;background:var(--card2);color:var(--text);padding:12px 8px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}
+.session-choice button:first-child{border-color:var(--orange);color:var(--orange)}
+.rir-row{display:flex;gap:6px;margin-top:10px;align-items:center;flex-wrap:wrap}
+.rir-choice{padding:7px 10px;border:1px solid var(--border2);background:var(--bg);color:var(--text2);border-radius:6px;font-size:11px;cursor:pointer}
+.rir-choice.active{border-color:var(--orange);background:var(--orange-dim);color:var(--orange)}
 </style>
 </head>
 <body>
@@ -231,7 +242,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
   <!-- HEADER -->
   <header class="header">
-    <div class="header-logo">IRON <span>PATH</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:0;margin-left:6px;font-weight:400;vertical-align:middle">b7</span></div>
+    <div class="header-logo">IRON <span>PATH</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);letter-spacing:0;margin-left:6px;font-weight:400;vertical-align:middle">b8</span></div>
     <div class="header-right">
       <div class="icon-btn" onclick="showWarmupPanel()" title="Warm-up">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -261,14 +272,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
         </div>
       </div>
 
-      <div class="card" style="padding:14px">
-        <div class="section-label" style="margin-bottom:10px">Training Focus</div>
-        <div class="workout-tabs">
-          <div class="w-tab mode-tab" id="mode-cut" onclick="setMode('cut',this)">Definition</div>
-          <div class="w-tab mode-tab" id="mode-bal" onclick="setMode('bal',this)">Balanced</div>
-          <div class="w-tab mode-tab" id="mode-mass" onclick="setMode('mass',this)">Mass</div>
+      <div class="card recovery-card" id="recoveryCard" style="padding:14px">
+        <div class="recovery-title" id="recoveryTitle">Checking recovery…</div>
+        <div id="recoveryText" style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.5"></div>
+        <div class="recovery-meta" id="recoveryMeta"></div>
+        <div class="session-choice">
+          <button id="strengthChoice" onclick="startWorkout()">STRENGTH</button>
+          <button onclick="showConditioningPlan()">CARDIO / RECOVERY</button>
         </div>
-        <div id="modeDesc" style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.5"></div>
       </div>
 
       <div class="card" style="padding:14px">
@@ -323,10 +334,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
         <div class="w-tab active" onclick="switchWorkout('A',this)">A</div>
         <div class="w-tab" onclick="switchWorkout('B',this)">B</div>
         <div class="w-tab" onclick="switchWorkout('C',this)">C</div>
-        <div class="w-tab" onclick="switchWorkout('D',this)">D</div>
       </div>
       <div id="exerciseList"></div>
-      <button class="quick-btn" onclick="startWorkout()">
+      <button class="quick-btn" onclick="startWorkout(currentWorkoutLetter)">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         BEGIN THIS WORKOUT
       </button>
@@ -395,8 +405,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
           <div class="toggle on" id="togOverload" onclick="this.classList.toggle('on')"></div>
         </div>
         <div class="settings-row">
-          <div><div class="settings-label">Deload Reminders</div><div class="settings-sub">Alert after 4 weeks of training</div></div>
-          <div class="toggle" id="togDeload" onclick="this.classList.toggle('on')"></div>
+          <div><div class="settings-label">Deload Guidance</div><div class="settings-sub">Uses performance, effort, and fatigue trends</div></div>
+          <div class="toggle on" id="togDeload" onclick="this.classList.toggle('on')"></div>
         </div>
         <div class="settings-row" style="border:none">
           <div><div class="settings-label">Default Rest Time</div></div>
@@ -419,10 +429,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
           <div class="w-tab" onclick="showCustomize('A',this)">A</div>
           <div class="w-tab" onclick="showCustomize('B',this)">B</div>
           <div class="w-tab" onclick="showCustomize('C',this)">C</div>
-          <div class="w-tab" onclick="showCustomize('D',this)">D</div>
         </div>
         <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg);border-radius:6px;margin-bottom:10px;line-height:1.5">
-          💡 Edit sets, reps, or rest time per exercise. Leave rest blank to use the mode default (currently <strong>${MODE_INFO[S.mode].rest}s</strong>).
+          💡 Edit sets, reps, or rest time per exercise. Leave rest blank to use the exercise's recommended rest.
         </div>
         <div id="customizeView"></div>
         <button class="quick-btn" style="margin-top:12px;background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="resetCustom()">
@@ -442,7 +451,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
       <div class="section-label">About</div>
       <div class="card">
         <div class="settings-row" style="border:none">
-          <div><div class="settings-label">Iron Path</div><div class="settings-sub">Build b7 · Dumbbell + Bands Strength Training</div></div>
+          <div><div class="settings-label">Iron Path</div><div class="settings-sub">Build b8 · Adaptive 3 + 2 Training</div></div>
         </div>
       </div>
     </div>
@@ -485,6 +494,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   </div>
   <div class="session-body" id="sessionBody"></div>
   <div class="session-footer">
+    <div class="rir-row" id="fatigueRow" data-fatigue="2" style="justify-content:center;margin:0 0 10px"><span style="font-size:11px;color:var(--text3)">TODAY'S FATIGUE</span><button class="rir-choice" onclick="selectFatigue(1,this)">1</button><button class="rir-choice active" onclick="selectFatigue(2,this)">2</button><button class="rir-choice" onclick="selectFatigue(3,this)">3</button><button class="rir-choice" onclick="selectFatigue(4,this)">4</button><button class="rir-choice" onclick="selectFatigue(5,this)">5</button></div>
     <button class="quick-btn" id="finishBtn" style="padding:14px;font-size:17px" onclick="finishWorkout()">FINISH WORKOUT ✓</button>
   </div>
 </div>
@@ -667,6 +677,54 @@ const WORKOUTS = {
 };
 
 
+// Build b8 keeps the established UI and exercise library while making the default
+// program a strict, progression-friendly A/B/C rotation.
+const byExerciseId=id=>Object.values(WORKOUTS).flat().find(ex=>ex.id===id);
+const configureExercise=(id,sets,reps,rest,movement,load)=>Object.assign(byExerciseId(id),{sets,reps,rest,movement,load});
+
+configureExercise('goblet-squat',3,'8-12',150,'squat',['Quads','Glutes','Core']);
+configureExercise('db-bench',3,'8-12',150,'horizontal push',['Chest','Shoulders','Triceps']);
+configureExercise('db-row',3,'10 each side',120,'horizontal pull',['Lats','Upper Back','Biceps']);
+configureExercise('lat-raise',2,'12-15',60,'isolation',['Shoulders']);
+configureExercise('plank',3,'30-60 sec',60,'core',['Core','Shoulders']);
+const farmerCarry={id:'farmer-carry',name:'Farmer Carry',sets:3,reps:'30-50 ft',rest:90,movement:'carry',load:['Grip','Core','Upper Back'],muscles:['Grip','Traps','Core'],
+  video:'https://www.youtube.com/results?search_query=farmer+carry+proper+form',
+  instructions:'Hold heavy dumbbells at your sides and walk with tall posture for 30-50 feet. Turn safely, reset your brace, and keep the weights quiet.',
+  tips:['Pack shoulders down and back','Use short controlled steps','Brace as if expecting a punch'],
+  mistakes:['Leaning to one side','Letting shoulders roll forward','Rushing the turn']};
+WORKOUTS.A=[byExerciseId('goblet-squat'),byExerciseId('db-bench'),byExerciseId('db-row'),byExerciseId('lat-raise'),byExerciseId('plank'),farmerCarry];
+
+configureExercise('bss',3,'8-12 each leg',150,'unilateral squat',['Quads','Glutes','Hamstrings']);
+configureExercise('rdl',3,'8-12',150,'hinge',['Hamstrings','Glutes','Lower Back']);
+configureExercise('seated-press',3,'8-12',120,'vertical push',['Shoulders','Triceps']);
+configureExercise('face-pull',2,'15-20',60,'shoulder health',['Rear Delts','Rotator Cuff','Upper Back']);
+configureExercise('hammer-curl',2,'10-12',60,'isolation',['Biceps','Forearms']);
+configureExercise('dead-bug',3,'8-10 each side',60,'core',['Core','Hip Flexors']);
+const bandLatPulldown={id:'band-lat-pulldown',name:'Band Lat Pulldown',sets:3,reps:'12-15',rest:90,movement:'vertical pull',load:['Lats','Upper Back','Biceps'],muscles:['Lats','Upper Back','Biceps'],
+  video:'https://www.youtube.com/results?search_query=resistance+band+lat+pulldown+proper+form',
+  instructions:'Anchor the band securely overhead. Begin with long arms, pull your elbows toward your ribs, pause, and return under control.',
+  tips:['Think elbows to back pockets','Keep shoulders away from ears','Let the lats lengthen at the top'],
+  mistakes:['Leaning far backward','Shrugging through the pull','Rushing the return']};
+WORKOUTS.B=[byExerciseId('bss'),byExerciseId('rdl'),byExerciseId('seated-press'),bandLatPulldown,byExerciseId('face-pull'),byExerciseId('hammer-curl'),byExerciseId('dead-bug')];
+
+configureExercise('step-up',3,'10 each leg',120,'unilateral squat',['Quads','Glutes']);
+configureExercise('pushup',2,'10-15',90,'horizontal push',['Chest','Shoulders','Triceps','Core']);
+configureExercise('chest-row',3,'10-12',120,'horizontal pull',['Upper Back','Rear Delts','Biceps']);
+configureExercise('band-pushdown',2,'15-20',60,'isolation',['Triceps']);
+configureExercise('band-pallof',3,'10-12 each side',60,'core',['Core','Obliques']);
+const bandLegCurl={id:'band-leg-curl',name:'Band Leg Curl',sets:3,reps:'12-15',rest:75,movement:'knee flexion',load:['Hamstrings'],muscles:['Hamstrings'],
+  video:'https://www.youtube.com/results?search_query=resistance+band+leg+curl+proper+form',
+  instructions:'Anchor the band low and secure it around the ankles. Curl the heel toward the glute without lifting the hips, then return slowly.',
+  tips:['Keep the hips quiet','Squeeze at the top','Use a slow return'],
+  mistakes:['Arching the lower back','Jerking the band','Losing tension at the bottom']};
+const suitcaseCarry={id:'suitcase-carry',name:'Suitcase Carry',sets:3,reps:'30-50 ft each side',rest:90,movement:'carry',load:['Core','Obliques','Grip'],muscles:['Core','Obliques','Grip'],
+  video:'https://www.youtube.com/results?search_query=suitcase+carry+exercise+proper+form',
+  instructions:'Hold one heavy dumbbell at your side. Walk tall while resisting the urge to lean, then switch sides.',
+  tips:['Stay tall','Keep the loaded shoulder packed','Take controlled steps'],
+  mistakes:['Leaning toward or away from the load','Letting the shoulder sag','Moving too quickly']};
+WORKOUTS.C=[byExerciseId('step-up'),byExerciseId('pushup'),byExerciseId('chest-row'),bandLegCurl,byExerciseId('band-pushdown'),byExerciseId('band-pallof'),suitcaseCarry];
+delete WORKOUTS.D;
+
 const FOCUS_POOLS={
   reardelts:[
     {id:'f-rear-fly',name:'Bent-Over Rear Delt Fly',sets:2,reps:{bal:'12-15',mass:'10-12',cut:'15-20'},muscles:['Rear Delts','Upper Back'],
@@ -839,12 +897,11 @@ const FOCUS_POOLS={
 };
 const FOCUS_LABELS={reardelts:'Rear Delts',sidedelts:'Side Delts',upperchest:'Upper Chest',midchest:'Mid Chest',lats:'Lats / Width',upperback:'Upper Back',biceps:'Biceps',triceps:'Triceps',quads:'Quads',hamstrings:'Hamstrings',glutes:'Glutes',calves:'Calves',core:'Core / Abs',grip:'Grip / Forearms'};
 const FOCUS_GROUPS={'Shoulders':['reardelts','sidedelts'],'Chest':['upperchest','midchest'],'Back':['lats','upperback'],'Arms':['biceps','triceps'],'Legs':['quads','hamstrings','glutes','calves'],'Other':['core','grip']};
-const FOCUS_NOTES={reardelts:'Best pick if pressing leaves your shoulders achy — rebalances front/rear delt development.',sidedelts:'Builds shoulder width and that capped look.',upperchest:'The most commonly underdeveloped chest region.',midchest:'Adds thickness through the mid and lower pecs.',lats:'Builds the V-taper and back width.',upperback:'Traps and rhomboids — thickness and posture.',biceps:'Direct arm flexor work beyond your rows and curls.',triceps:'Two-thirds of your arm size lives here.',quads:'Front-thigh size and knee-tracking strength.',hamstrings:'Your program is quad-heavy — this is the usual gap.',glutes:'Hip drive and posterior strength.',calves:'Stubborn and high-frequency — needs dedicated volume.',core:'Rotational and lateral core beyond planks.',grip:'Carries are gone from your program, so grip work lives here.'};
+const FOCUS_NOTES={reardelts:'Useful when extra shoulder-health work is a real priority.',sidedelts:'Adds a small amount of direct shoulder volume.',upperchest:'Adds targeted upper-chest work.',midchest:'Adds targeted chest work.',lats:'Adds vertical-pulling volume.',upperback:'Adds posture-focused upper-back work.',biceps:'Adds direct arm work beyond rows and pulldowns.',triceps:'Adds direct arm work beyond pressing.',quads:'Adds knee-dominant leg volume.',hamstrings:'Adds posterior-chain volume.',glutes:'Adds hip-extension volume.',calves:'Adds direct ankle and calf work.',core:'Adds rotational or lateral trunk work.',grip:'Adds extra grip work beyond the programmed carries.'};
 const PAIRS={
-  A:[['goblet-squat','db-bench'],['db-row','lat-raise'],['band-pull-apart','plank']],
-  B:[['bss','incline-press'],['rdl','face-pull'],['hammer-curl','dead-bug']],
-  C:[['step-up','pushup'],['chest-row','seated-press'],['band-pushdown','band-pallof']],
-  D:[['band-squat','band-chest-press'],['band-row','db-thruster'],['band-curl','renegade-row']]
+  A:[['goblet-squat','db-bench'],['db-row','lat-raise'],['plank','farmer-carry']],
+  B:[['bss','band-lat-pulldown'],['rdl','seated-press'],['face-pull','hammer-curl'],['dead-bug']],
+  C:[['step-up','pushup'],['chest-row','band-leg-curl'],['band-pushdown','band-pallof'],['suitcase-carry']]
 };
 
 
@@ -853,13 +910,13 @@ const EX_CATEGORIES={
   'db-bench':'press', 'incline-press':'press', 'pushup':'press', 'seated-press':'press',
   'band-chest-press':'press', 'db-thruster':'press',
   // Pulling: horizontal and vertical
-  'db-row':'pull', 'face-pull':'pull', 'chest-row':'pull', 'band-row':'pull', 'band-pull-apart':'pull',
+  'db-row':'pull', 'face-pull':'pull', 'chest-row':'pull', 'band-row':'pull', 'band-pull-apart':'pull', 'band-lat-pulldown':'pull',
   'band-curl':'pull', 'hammer-curl':'pull', 'band-pushdown':'pull',
   // Lower body: quad and hinge patterns
   'goblet-squat':'lower', 'bss':'lower', 'step-up':'lower', 'band-squat':'lower',
-  'rdl':'lower',
+  'rdl':'lower', 'band-leg-curl':'lower',
   // Core/accessories
-  'plank':'core', 'dead-bug':'core', 'band-pallof':'core', 'renegade-row':'core',
+  'plank':'core', 'dead-bug':'core', 'band-pallof':'core', 'renegade-row':'core', 'farmer-carry':'core', 'suitcase-carry':'core',
   'lat-raise':'shoulder',
   // Focus exercises
   'f-rear-fly':'pull', 'f-band-lat':'shoulder', 'f-db-flye':'press', 'f-band-pushup':'press',
@@ -913,7 +970,13 @@ let S = JSON.parse(localStorage.getItem('ironpath_v2')||'null') || {
   settings:{restSecs:90,autoRest:true,overloadTips:true,deload:false}
 };
 
-S.mode=S.mode||'bal';S.focus=S.focus||null;S.customProgram=S.customProgram||{};if(S.quickLog===undefined)S.quickLog=true; // migrate older saves
+S.mode='bal';
+S.focus=S.focus||null;
+S.customProgram=S.customProgram||{};
+S.conditioning=S.conditioning||[];
+S.readiness=S.readiness||{fatigue:2};
+if(S.quickLog===undefined)S.quickLog=false;
+if(!['A','B','C'].includes(S.nextWorkout))S.nextWorkout='A';
 function save(){localStorage.setItem('ironpath_v2',JSON.stringify(S));}
 
 function calcCategoryVolume(){
@@ -975,10 +1038,10 @@ function renderFocusChips(){
   if(tag)tag.textContent=S.focus?FOCUS_LABELS[S.focus]:'None';
   const d=document.getElementById('focusDesc');
   if(S.focus){
-    const exs=FOCUS_POOLS[S.focus].map(e=>e.name).join(' + ');
-    d.innerHTML=`<strong style="color:var(--orange)">${FOCUS_LABELS[S.focus]} focus active.</strong> ${FOCUS_NOTES[S.focus]}<br><span style="color:var(--text3)">Adding ${exs} to the start of every workout. Run 4-8 weeks, then tap again to turn off.</span>`;
+    const exs=FOCUS_POOLS[S.focus].slice(0,1).map(e=>e.name).join('');
+    d.innerHTML=`<strong style="color:var(--orange)">${FOCUS_LABELS[S.focus]} focus active.</strong> ${FOCUS_NOTES[S.focus]}<br><span style="color:var(--text3)">Adding one optional accessory (${exs}). Keep it only while recovery and progress remain good.</span>`;
   } else {
-    d.textContent='Pick a lagging area to add 2 targeted exercises to the start of every workout, while you are fresh. Tap the active one to turn it off.';
+    d.textContent='Optional: add one targeted accessory. The base program is complete, so use this only for a genuine priority.';
   }
 }
 
@@ -999,14 +1062,85 @@ function setMode(m,el){
 
 // ===================== HELPERS =====================
 function getAllEx(){return Object.keys(WORKOUTS).flatMap(k=>WORKOUTS[k]).concat(Object.values(FOCUS_POOLS).flat());}
-function getFocusExs(){return S.focus?FOCUS_POOLS[S.focus]:[];}
+function getFocusExs(){return S.focus?FOCUS_POOLS[S.focus].slice(0,1):[];}
 function fmtVol(v){return v>=1000?(v/1000).toFixed(1)+'k':Math.round(v).toString();}
 function exLetterMap(){const m={};Object.keys(WORKOUTS).forEach(l=>WORKOUTS[l].forEach(e=>m[e.id]=l));return m;}
+
+function strengthWorkouts(){return (S.workouts||[]).filter(w=>['A','B','C'].includes(w.workout));}
+function lastStrength(){return strengthWorkouts().slice(-1)[0]||null;}
+function recoveryStatus(){
+  const last=lastStrength();
+  const next=WORKOUTS[S.nextWorkout]||WORKOUTS.A;
+  if(!last)return{ready:true,hours:0,required:36,last:null};
+  const elapsed=(Date.now()-Number(last.ts))/3600000;
+  const priorLoad=new Set((last.exercises||[]).flatMap(log=>(getAllEx().find(e=>e.id===log.id)?.load)||[]));
+  const nextLoad=new Set(next.flatMap(e=>e.load||e.muscles||[]));
+  const overlap=[...nextLoad].filter(m=>priorLoad.has(m)).length/Math.max(1,nextLoad.size);
+  const rirs=(last.exercises||[]).map(e=>Number(e.rir)).filter(Number.isFinite);
+  const avgRir=rirs.length?rirs.reduce((a,b)=>a+b,0)/rirs.length:2;
+  const fatigue=Number(last.fatigue??S.readiness.fatigue??2);
+  const required=Math.min(60,Math.round(34+overlap*14+(avgRir<=1?6:0)+(fatigue>=4?6:0)));
+  return{ready:elapsed>=required,hours:Math.max(0,Math.ceil(required-elapsed)),required,last,avgRir,fatigue};
+}
+
+function renderRecovery(){
+  const r=recoveryStatus();
+  const card=document.getElementById('recoveryCard');
+  const title=document.getElementById('recoveryTitle');
+  const text=document.getElementById('recoveryText');
+  const meta=document.getElementById('recoveryMeta');
+  const strength=document.getElementById('strengthChoice');
+  card.classList.toggle('ready',r.ready);
+  if(!r.last){
+    title.textContent='Ready for Workout '+S.nextWorkout;
+    text.textContent='Start the A/B/C rotation when you feel ready, or choose an easy aerobic session today.';
+    meta.innerHTML='<span class="recovery-chip">3 strength + 2 cardio</span><span class="recovery-chip">Target: 2 RIR</span>';
+  }else if(r.ready){
+    title.textContent='Recovered • Workout '+S.nextWorkout+' is ready';
+    text.textContent='Your recovery target has been met. Train with controlled reps and leave about two good reps in reserve.';
+    meta.innerHTML='<span class="recovery-chip">'+r.required+'h target met</span><span class="recovery-chip">Next: '+S.nextWorkout+'</span>';
+  }else{
+    title.textContent='Cardio / recovery recommended';
+    text.textContent='Workout '+r.last.workout+' still overlaps the next strength session. Zone 2, walking, and mobility build fitness without competing with recovery.';
+    meta.innerHTML='<span class="recovery-chip">~'+r.hours+'h recovery remaining</span><span class="recovery-chip">Next strength: '+S.nextWorkout+'</span>';
+  }
+  strength.textContent=r.ready?'START WORKOUT '+S.nextWorkout:'TRAIN ANYWAY • '+S.nextWorkout;
+}
+
+function repRange(ex){
+  const nums=String(getReps(ex)).match(/\d+/g)?.map(Number)||[];
+  return{low:nums[0]||0,high:nums[1]||nums[0]||0};
+}
+function exerciseLogs(exId){
+  return strengthWorkouts().flatMap(w=>(w.exercises||[]).filter(e=>e.id===exId).map(e=>({...e,ts:w.ts}))).slice(-3);
+}
+function progressionAdvice(ex){
+  const logs=exerciseLogs(ex.id);
+  if(!logs.length)return`Start ${ex.name} conservatively and finish near 2 RIR.`;
+  const last=logs[logs.length-1];
+  const sets=(last.sets||[]).filter(s=>Number(s.r)>0);
+  const {low,high}=repRange(ex);
+  const rir=Number.isFinite(Number(last.rir))?Number(last.rir):2;
+  if(!sets.length)return`Maintain ${ex.name} and log reps to unlock a precise progression recommendation.`;
+  const minRep=Math.min(...sets.map(s=>Number(s.r)));
+  if(minRep>=high&&rir>=1&&rir<=3)return`Add the smallest practical weight or band increase to ${ex.name}; rebuild from ${low} reps.`;
+  if(minRep<low||rir===0)return`Reduce the load slightly or maintain it until every ${ex.name} set reaches ${low} clean reps.`;
+  return`Maintain the current ${ex.name} load and add reps toward ${high} while keeping about 2 RIR.`;
+}
+function deloadAdvice(){
+  const recent=strengthWorkouts().slice(-3);
+  if(recent.length<2)return'';
+  const highFatigue=recent.filter(w=>Number(w.fatigue)>=4).length;
+  const hard=recent.filter(w=>{const rs=(w.exercises||[]).map(e=>Number(e.rir)).filter(Number.isFinite);return rs.length&&rs.reduce((a,b)=>a+b,0)/rs.length<=1;}).length;
+  const poor=recent.filter(w=>(w.exercises||[]).filter(e=>(e.sets||[]).length).length<Math.max(2,(WORKOUTS[w.workout]?.length||4)/2)).length;
+  return highFatigue>=2&&hard>=2||highFatigue>=2&&poor>=1?'Recovery trend: consider a light week with 30–40% fewer sets, then reassess.':'';
+}
 
 // ===================== INIT =====================
 function init(){
   document.getElementById('todayDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   document.getElementById('nextWorkoutLabel').textContent=S.nextWorkout;
+  renderRecovery();
   document.getElementById('streakCount').textContent=S.streak;
   document.getElementById('totalWorkoutsLabel').textContent=S.totalWorkouts;
   document.getElementById('totalVolumeLabel').textContent=fmtVol(S.totalVolume);
@@ -1023,7 +1157,7 @@ function init(){
   const days=['S','M','T','W','T','F','S'];
   const today=new Date().getDay();
   document.getElementById('weekStrip').innerHTML=days.map((d,i)=>{
-    const done=S.workouts.some(w=>new Date(w.ts).getDay()===i && Date.now()-new Date(w.ts)<7*86400000);
+    const done=[...(S.workouts||[]),...(S.conditioning||[])].some(w=>new Date(w.ts).getDay()===i && Date.now()-new Date(w.ts)<7*86400000);
     const isToday=i===today;
     return `<div class="day-dot">
       <div class="day-circle ${done?'done':''} ${isToday&&!done?'today':''}">${done?'✓':d}</div>
@@ -1041,24 +1175,18 @@ function init(){
 
   // Overload tip
   const otip=document.getElementById('overloadTip');
-  if(document.getElementById('togOverload').classList.contains('on')&&prs.length){
-    const [id,val]=prs[Math.floor(Math.random()*prs.length)];
-    const ex=getAllEx().find(e=>e.id===id);
-    if(ex){
+  if(document.getElementById('togOverload').classList.contains('on')){
+    const ex=(WORKOUTS[S.nextWorkout]||[]).find(e=>exerciseLogs(e.id).length);
+    const deload=document.getElementById('togDeload').classList.contains('on')?deloadAdvice():'';
+    if(ex||deload){
       otip.style.display='flex';
-      document.getElementById('overloadMsg').textContent=`You've been consistent on ${ex.name} — consider adding 2.5–5 lbs next session for progressive overload.`;
-    }
+      document.getElementById('overloadMsg').textContent=deload||progressionAdvice(ex);
+    }else otip.style.display='none';
   } else { otip.style.display='none'; }
 
   // Quote
   const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
   document.getElementById('quoteCard').innerHTML=`"${q.text}"<div class="attr">— ${q.attr}</div>`;
-
-  // Mode toggle state
-  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
-  const mtab=document.getElementById('mode-'+S.mode);
-  if(mtab)mtab.classList.add('active');
-  document.getElementById('modeDesc').textContent=MODE_INFO[S.mode].desc;
 
   renderFocusChips();
 
@@ -1067,6 +1195,8 @@ function init(){
   renderBwHistory();
   renderVolumeBreakdown();
   renderBadges();
+  currentWorkoutLetter=S.nextWorkout;
+  document.querySelectorAll('#page-workouts .w-tab').forEach(t=>t.classList.toggle('active',t.textContent.trim()===S.nextWorkout));
   renderExerciseList(S.nextWorkout);
   renderLibrary();
   updateAchievements();
@@ -1096,18 +1226,18 @@ function renderExerciseList(letter){
   (PAIRS[letter]||[]).forEach((p,pi)=>p.forEach((id,ei)=>labelOf[id]=(pi+1)+(ei===0?'A':'B')));
   const exs=focus.concat(base);
   const totalSets=exs.reduce((a,e)=>a+e.sets,0);
-  const est=Math.round(totalSets*2.2+4);
+  const est=Math.round(totalSets*2.5+5);
   document.getElementById('exerciseList').innerHTML=
-    `<div style="font-size:12px;color:var(--text2);padding:2px 2px 10px;line-height:1.5">⏱ ~${est} min · 3 supersets — alternate the paired exercises (1A ↔ 1B), resting 60-75s between sets</div>`+
+    `<div style="font-size:12px;color:var(--text2);padding:2px 2px 10px;line-height:1.5">⏱ ~${est} min · Work in pairs when form stays strong · rest 60–150s as shown by the timer</div>`+
     exs.map((ex,i)=>{
       const isFocus=i<focus.length;
-      const base=WORKOUTS[currentWorkoutLetter]||[];
+      const base=WORKOUTS[letter]||[];
       const isInBase=base.find(x=>x.id===ex.id);
-      const custOverride=getExerciseOverride(currentWorkoutLetter,ex.id);
+      const custOverride=getExerciseOverride(letter,ex.id);
       if(isInBase&&custOverride?.removed)return '';
       const tag=isFocus?'★':(labelOf[ex.id]||'0'+(i+1-focus.length));
-      const custom=isInBase?applyCustom(ex,currentWorkoutLetter):ex;
-      const swapId=isInBase?getCustomProgram()[currentWorkoutLetter]?.[ex.id]?.swapId:null;
+      const custom=isInBase?applyCustom(ex,letter):ex;
+      const swapId=isInBase?getCustomProgram()[letter]?.[ex.id]?.swapId:null;
       const swapped=swapId?getAllEx().find(x=>x.id===swapId):null;
       const displayEx=swapped||ex;
       const customTag=swapped||custom.sets!==ex.sets||custom.reps!==getReps(ex)?'<span style="color:var(--orange);font-size:9px;letter-spacing:1px">CUSTOM</span>':'';
@@ -1117,7 +1247,7 @@ function renderExerciseList(letter){
         <div class="ex-info">
           <div class="ex-name">${displayEx.name}${isFocus?' <span style="font-size:9px;color:var(--orange);letter-spacing:1px;vertical-align:middle">FOCUS</span>':''}${customTag}</div>
           <div class="ex-sets">${custom.sets} sets × ${getReps(custom)}</div>
-          <div class="ex-muscles">${ex.muscles.map(m=>`<span class="muscle-chip">${m}</span>`).join('')}</div>
+          <div class="ex-muscles">${displayEx.muscles.map(m=>`<span class="muscle-chip">${m}</span>`).join('')}</div>
         </div>
         <div class="ex-arrow"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
       </div>
@@ -1144,7 +1274,9 @@ function showDetail(exId){
       <div>
         <div class="detail-section-title">Prescription</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700">${ex.sets} sets × ${getReps(ex)}</div>
+        <div class="detail-text" style="margin-top:5px">Suggested rest: ${ex.rest||90} seconds · Aim for about 2 RIR</div>
       </div>
+      <div class="overload-tip" style="display:flex"><span>${progressionAdvice(ex)}</span></div>
       <div>
         <div class="detail-section-title">How to Perform</div>
         <div class="detail-text">${ex.instructions}</div>
@@ -1171,6 +1303,27 @@ function showDetail(exId){
 }
 
 function closeDetail(){document.getElementById('detailOverlay').classList.remove('active');}
+
+function showConditioningPlan(){
+  const lastType=(S.conditioning||[]).slice(-1)[0]?.type;
+  const suggested=lastType==='zone2'?'recovery':'zone2';
+  const r=recoveryStatus();
+  const intervals=r.ready&&Number(S.readiness.fatigue||2)<=2;
+  document.getElementById('detailTitle').textContent='CARDIO / RECOVERY';
+  document.getElementById('detailBody').innerHTML=`<div class="detail-content">
+    <div class="overload-tip" style="display:flex"><span><strong>Recommended today: ${suggested==='zone2'?'Zone 2 aerobic work':'easy recovery + mobility'}.</strong><br>Cardio supports fitness; it does not advance the A/B/C strength rotation.</span></div>
+    <div class="card"><div class="detail-section-title">Zone 2</div><div class="detail-text">30–45 minutes of brisk walking, incline walking, cycling, or similar work at a conversational pace.</div><div class="rir-row"><input class="set-input" id="zone2Minutes" type="number" value="35" min="10" max="120"><span style="font-size:11px;color:var(--text3)">minutes</span></div><button class="settings-btn" onclick="logConditioning('zone2','zone2Minutes')">Log Zone 2</button></div>
+    <div class="card"><div class="detail-section-title">Recovery conditioning</div><div class="detail-text">20–40 minutes easy walking or cycling, plus 8–12 minutes for hips, ankles, upper back, and shoulders.</div><div class="rir-row"><input class="set-input" id="recoveryMinutes" type="number" value="30" min="10" max="120"><span style="font-size:11px;color:var(--text3)">minutes</span></div><button class="settings-btn" onclick="logConditioning('recovery','recoveryMinutes')">Log Recovery</button></div>
+    ${intervals?'<div class="card"><div class="detail-section-title">Optional intervals</div><div class="detail-text">Only if you feel fresh: after a warm-up, do 4–6 hard efforts of 60 seconds with 2 minutes easy between. Stop if form or pace drops sharply.</div><button class="settings-btn" onclick="logConditioning(\'intervals\')">Log Intervals (20 min)</button></div>':'<div class="detail-text" style="color:var(--text3)">Intervals are hidden today because strength recovery or reported fatigue makes easier aerobic work the better choice.</div>'}
+  </div>`;
+  document.getElementById('detailOverlay').classList.add('active');
+}
+function logConditioning(type,inputId){
+  const minutes=Number(document.getElementById(inputId)?.value||(type==='intervals'?20:30));
+  S.conditioning.push({ts:Date.now(),type,minutes});
+  save();closeDetail();init();
+  alert((type==='zone2'?'Zone 2':type==='recovery'?'Recovery session':'Intervals')+' logged. Workout '+S.nextWorkout+' remains next in the strength rotation.');
+}
 
 function getHistory(exId){
   const all=[];
@@ -1208,6 +1361,7 @@ function sessionCardHTML(ex,gi){
         <div class="pill-add" onclick="addPill('${ex.id}',${gi},this)">+</div>
         <input class="pill-weight" type="number" placeholder="lbs" id="qw-${ex.id}" inputmode="decimal" title="Optional — logs volume and PRs">
       </div>
+      <div class="rir-row" id="rir-${ex.id}" data-rir="2"><span style="font-size:11px;color:var(--text3)">RIR</span>${[3,2,1,0].map(v=>`<button class="rir-choice ${v===2?'active':''}" onclick="selectRIR('${ex.id}',${v},this)">${v===3?'3+':v}</button>`).join('')}<span style="font-size:10px;color:var(--text3)">3+ easy · 2 productive · 1 hard · 0 failure</span></div>
     </div>`;
   }
   const rows=Array.from({length:ex.sets},(_,j)=>`
@@ -1230,8 +1384,21 @@ function sessionCardHTML(ex,gi){
         ${rows}
       </div>
       <div class="add-set-btn" onclick="addSetRow('${ex.id}',this)">+ Add Set</div>
+      <div class="rir-row" id="rir-${ex.id}" data-rir="2"><span style="font-size:11px;color:var(--text3)">RIR</span>${[3,2,1,0].map(v=>`<button class="rir-choice ${v===2?'active':''}" onclick="selectRIR('${ex.id}',${v},this)">${v===3?'3+':v}</button>`).join('')}<span style="font-size:10px;color:var(--text3)">3+ easy · 2 productive · 1 hard · 0 failure</span></div>
       <textarea class="note-input" placeholder="Notes for this exercise..." rows="1"></textarea>
     </div>`;
+}
+function selectRIR(exId,value,btn){
+  const row=document.getElementById('rir-'+exId);
+  row.dataset.rir=value;
+  row.querySelectorAll('.rir-choice').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function selectFatigue(value,btn){
+  const row=document.getElementById('fatigueRow');
+  row.dataset.fatigue=value;
+  row.querySelectorAll('.rir-choice').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
 }
 function tapSet(exId,j,el){
   el.classList.toggle('done');
@@ -1253,13 +1420,18 @@ function addPill(exId,gi,btn){
   btn.parentNode.insertBefore(p,btn);
   updateGroupProgress(gi);
 }
-function startWorkout(){
-  activeLetter=S.nextWorkout;
-  const base=WORKOUTS[activeLetter];
-  const byId={};base.forEach(e=>byId[e.id]=e);
+function startWorkout(forceLetter){
+  activeLetter=['A','B','C'].includes(forceLetter)?forceLetter:S.nextWorkout;
+  selectFatigue(2,document.querySelector('#fatigueRow .rir-choice:nth-of-type(2)'));
+  const base=WORKOUTS[activeLetter].filter(e=>!getExerciseOverride(activeLetter,e.id)?.removed).map(e=>{
+    const custom=applyCustom(e,activeLetter);
+    const swapped=getExerciseForSession(e.id,activeLetter);
+    return{...(swapped||e),sets:custom.sets,reps:custom.reps,slotId:e.id};
+  });
+  const byId={};base.forEach(e=>byId[e.slotId||e.id]=e);
   const groups=(PAIRS[activeLetter]||[]).map(p=>p.map(id=>byId[id]).filter(Boolean)).filter(g=>g.length);
   const paired=new Set((PAIRS[activeLetter]||[]).flat());
-  const leftovers=base.filter(e=>!paired.has(e.id));
+  const leftovers=base.filter(e=>!paired.has(e.slotId||e.id));
   if(leftovers.length)groups.push(leftovers);
   const focus=getFocusExs();
   if(focus.length)groups.unshift(focus);
@@ -1267,7 +1439,7 @@ function startWorkout(){
   document.getElementById('sessionTitle').textContent=`WORKOUT ${activeLetter}`;
   document.getElementById('sessionBody').innerHTML=groups.map((g,gi)=>{
     const isFocus=focus.length&&gi===0;
-    const label=isFocus?'FOCUS BLOCK — do this first, while fresh':'SUPERSET '+(gi+(focus.length?0:1));
+    const label=isFocus?'OPTIONAL FOCUS — skip if recovery is limited':'PAIR '+(gi+(focus.length?0:1));
     const total=g.reduce((a,e)=>a+e.sets,0);
     return `<div class="ss-block" id="ssb-${gi}" data-group="${gi}">
       <div class="ss-head">
@@ -1278,7 +1450,7 @@ function startWorkout(){
         </div>
       </div>
       <div class="ss-bar"><div class="ss-fill" id="ssFill-${gi}" style="width:0%"></div></div>
-      <div class="ss-hint">Alternate sets · rest between</div>
+      <div class="ss-hint">Alternate only when technique and recovery stay strong</div>
     </div>
     <div class="ss-group">${g.map(e=>sessionCardHTML(e,gi)).join('')}</div>`;
   }).join('');
@@ -1373,7 +1545,7 @@ function finishWorkout(){
         const existW=S.prs[ex.id]?parseFloat(S.prs[ex.id]):0;
         if(w>existW)S.prs[ex.id]=`${w} lbs × ${repGuess}`;
       }
-      loggedExercises.push({id:ex.id,sets});
+      loggedExercises.push({id:ex.id,sets,rir:Number(document.getElementById('rir-'+ex.id)?.dataset.rir??2)});
       return;
     }
     const maxSets=(setCounts[ex.id]||ex.sets)+2;
@@ -1394,14 +1566,16 @@ function finishWorkout(){
         if(w>existW)S.prs[ex.id]=`${w} lbs × ${r}`;
       }
     }
-    if(sets.length)loggedExercises.push({id:ex.id,sets});
+    if(sets.length)loggedExercises.push({id:ex.id,sets,rir:Number(document.getElementById('rir-'+ex.id)?.dataset.rir??2)});
   });
 
-  S.workouts.push({ts:Date.now(),workout:activeLetter,volume:totalVol,exercises:loggedExercises});
+  const fatigue=Number(document.getElementById('fatigueRow')?.dataset.fatigue||2);
+  S.readiness.fatigue=fatigue;
+  S.workouts.push({ts:Date.now(),workout:activeLetter,volume:totalVol,exercises:loggedExercises,fatigue,durationSecs:elapsed});
   S.totalWorkouts++;
   S.totalVolume+=totalVol;
   S.streak++;
-  const wOrder=Object.keys(WORKOUTS);S.nextWorkout=wOrder[(wOrder.indexOf(activeLetter)+1)%wOrder.length];
+  const wOrder=['A','B','C'];S.nextWorkout=wOrder[(wOrder.indexOf(activeLetter)+1)%wOrder.length];
   save();
 
   document.getElementById('sessionOverlay').classList.remove('active');
@@ -1477,7 +1651,8 @@ function applyCustom(ex,letter){
 function getRestTime(exId,letter){
   const custom=getExerciseOverride(letter,exId);
   if(custom?.rest)return parseInt(custom.rest);
-  return MODE_INFO[S.mode]?.rest||90;
+  const ex=getExerciseForSession(exId,letter)||getAllEx().find(e=>e.id===exId);
+  return Number(ex?.rest)||Number(document.getElementById('restSecs')?.value)||90;
 }
 function getExerciseForSession(exId,letter){
   if(!exId)return null;
@@ -1599,11 +1774,12 @@ function showWarmupPanel(){
 
 // ===================== EXPORT =====================
 function exportCSV(){
-  let csv='Date,Workout,Volume (lbs),Exercises\n';
+  let csv='Date,Session,Duration (min),Volume (lbs),Fatigue,Exercises and RIR\n';
   S.workouts.forEach(w=>{
-    const exNames=(w.exercises||[]).map(e=>getAllEx().find(x=>x.id===e.id)?.name||e.id+' (retired)').join('; ');
-    csv+=`${new Date(w.ts).toLocaleDateString()},${w.workout},${Math.round(w.volume)},"${exNames}"\n`;
+    const exNames=(w.exercises||[]).map(e=>(getAllEx().find(x=>x.id===e.id)?.name||e.id+' (retired)')+' [RIR '+(e.rir??'—')+']').join('; ');
+    csv+=`${new Date(w.ts).toLocaleDateString()},Strength ${w.workout},${Math.round((w.durationSecs||0)/60)},${Math.round(w.volume||0)},${w.fatigue??''},"${exNames}"\n`;
   });
+  (S.conditioning||[]).forEach(c=>{csv+=`${new Date(c.ts).toLocaleDateString()},${c.type},${c.minutes||''},0,,\n`;});
   if(S.bodyweights.length){
     csv+='\nDate,Bodyweight (lbs)\n';
     S.bodyweights.forEach(b=>{csv+=`${new Date(b.ts).toLocaleDateString()},${b.weight}\n`;});
@@ -1743,7 +1919,7 @@ function confirmReset(){
 // Service worker: network-first so updates land immediately
 if('serviceWorker' in navigator){
   const swCode=`
-    const C='ip-b7';
+    const C='ip-b8';
     self.addEventListener('install',e=>{self.skipWaiting();});
     self.addEventListener('activate',e=>{
       e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
@@ -1763,7 +1939,7 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
   // Drop caches from earlier builds
   if(window.caches){
-    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b7')caches.delete(k);}));
+    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b8')caches.delete(k);}));
   }
 }
 
