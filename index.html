@@ -1591,18 +1591,34 @@ function closeComplete(){
 }
 
 // ===================== REST TIMER =====================
-function showRestTimer(secs){
-  restLeft=secs;
-  document.getElementById('restCount').textContent=secs;
-  document.getElementById('restOverlay').classList.add('active');
-  clearInterval(restInt);
-  restInt=setInterval(()=>{
-    restLeft--;
-    document.getElementById('restCount').textContent=restLeft;
-    if(restLeft<=0)skipRest();
-  },1000);
+let restEndsAt=0;
+function updateRestTimer(){
+  if(!restEndsAt)return;
+  restLeft=Math.max(0,Math.ceil((restEndsAt-Date.now())/1000));
+  const count=document.getElementById('restCount');
+  if(count)count.textContent=restLeft;
+  if(restLeft<=0)skipRest();
 }
-function skipRest(){clearInterval(restInt);document.getElementById('restOverlay').classList.remove('active');}
+function showRestTimer(secs){
+  const safeSecs=Math.max(1,Number(secs)||90);
+  clearInterval(restInt);
+  restEndsAt=Date.now()+(safeSecs*1000);
+  restLeft=safeSecs;
+  document.getElementById('restCount').textContent=restLeft;
+  document.getElementById('restOverlay').classList.add('active');
+  restInt=setInterval(updateRestTimer,250);
+  updateRestTimer();
+}
+function skipRest(){
+  clearInterval(restInt);
+  restInt=null;
+  restEndsAt=0;
+  restLeft=0;
+  document.getElementById('restOverlay').classList.remove('active');
+}
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&restEndsAt)updateRestTimer();
+});
 
 // ===================== PROGRESS =====================
 function buildVolumeChart(){
@@ -1919,7 +1935,7 @@ function confirmReset(){
 // Service worker: network-first so updates land immediately
 if('serviceWorker' in navigator){
   const swCode=`
-    const C='ip-b8';
+    const C='ip-b9';
     self.addEventListener('install',e=>{self.skipWaiting();});
     self.addEventListener('activate',e=>{
       e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
@@ -1939,7 +1955,7 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
   // Drop caches from earlier builds
   if(window.caches){
-    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b8')caches.delete(k);}));
+    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b9')caches.delete(k);}));
   }
 }
 
