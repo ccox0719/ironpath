@@ -410,7 +410,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
         </div>
         <div class="settings-row" style="border:none">
           <div><div class="settings-label">Default Rest Time</div></div>
-          <select id="restSecs" style="background:var(--card2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px">
+          <select id="restSecs" onchange="setDefaultRest(this.value)" style="background:var(--card2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px">
             <option value="60">60s</option><option value="90" selected>90s</option><option value="120">120s</option><option value="180">180s</option>
           </select>
         </div>
@@ -1138,6 +1138,8 @@ function deloadAdvice(){
 
 // ===================== INIT =====================
 function init(){
+  const restSelect=document.getElementById('restSecs');
+  if(restSelect)restSelect.value=String(Number(S.settings?.restSecs)||90);
   document.getElementById('todayDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   document.getElementById('nextWorkoutLabel').textContent=S.nextWorkout;
   renderRecovery();
@@ -1664,11 +1666,18 @@ function applyCustom(ex,letter){
   return{...ex,sets:override.sets||ex.sets,reps:override.reps||ex.reps,swapId:override.swapId};
 }
 
+function setDefaultRest(value){
+  const secs=Math.max(30,Number(value)||90);
+  S.settings=S.settings||{};
+  S.settings.restSecs=secs;
+  save();
+}
 function getRestTime(exId,letter){
   const custom=getExerciseOverride(letter,exId);
   if(custom?.rest)return parseInt(custom.rest);
-  const ex=getExerciseForSession(exId,letter)||getAllEx().find(e=>e.id===exId);
-  return Number(ex?.rest)||Number(document.getElementById('restSecs')?.value)||90;
+  const selected=Number(document.getElementById('restSecs')?.value);
+  const saved=Number(S.settings?.restSecs);
+  return selected||saved||90;
 }
 function getExerciseForSession(exId,letter){
   if(!exId)return null;
@@ -1935,7 +1944,7 @@ function confirmReset(){
 // Service worker: network-first so updates land immediately
 if('serviceWorker' in navigator){
   const swCode=`
-    const C='ip-b9';
+    const C='ip-b10';
     self.addEventListener('install',e=>{self.skipWaiting();});
     self.addEventListener('activate',e=>{
       e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
@@ -1955,7 +1964,7 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
   // Drop caches from earlier builds
   if(window.caches){
-    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b9')caches.delete(k);}));
+    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b10')caches.delete(k);}));
   }
 }
 
