@@ -642,88 +642,69 @@ const WORKOUTS = {
      tips:['Fight the twist — that IS the exercise','Brace like you are about to be punched','Step further from the anchor to increase difficulty'],
      mistakes:['Letting the torso rotate','Pressing too fast','Standing too close to anchor']},
   ],
-  D:[
-    {id:'band-squat',name:'Band Front Squat',sets:3,reps:{bal:'12-15',mass:'8-10',cut:'15-20'},muscles:['Quads','Glutes','Core'],
-     video:'https://www.youtube.com/results?search_query=resistance+band+front+squat+proper+form',
-     instructions:'Stand on the band, loop it over the front of your shoulders (rack position). Squat deep keeping chest tall, then drive up against the band tension.',
-     tips:['Band tension peaks at the top — accelerate through the sticking point','Keep elbows high in the rack position','Full depth every rep'],
-     mistakes:['Letting the band pull you forward','Cutting depth short','Losing upright torso']},
-    {id:'band-chest-press',name:'Band Chest Press',sets:3,reps:{bal:'12-15',mass:'8-10',cut:'15-20'},muscles:['Chest','Shoulders','Triceps'],
-     video:'https://www.youtube.com/results?search_query=resistance+band+chest+press+proper+form',
-     instructions:'Anchor band behind you at chest height (or wrap around your back). Press both handles forward to full extension, squeezing the chest at the end.',
-     tips:['Step forward for more tension','Squeeze hands toward midline at full extension','Slow negative back to start'],
-     mistakes:['Standing too close to anchor (no tension)','Shrugging shoulders','Rushing the return']},
-    {id:'band-row',name:'Band Bent-Over Row',sets:3,reps:{bal:'12-15',mass:'8-10',cut:'15-20'},muscles:['Lats','Upper Back','Biceps'],
-     video:'https://www.youtube.com/results?search_query=resistance+band+bent+over+row+proper+form',
-     instructions:'Stand on the band, hinge at the hips with a flat back. Row the handles to your ribcage, squeezing shoulder blades together.',
-     tips:['Widen your stance on the band for more resistance','Pause 1 sec at the top','Keep a rigid hinge — no standing up between reps'],
-     mistakes:['Rounding the back','Using body English','Short range of motion']},
-    {id:'db-thruster',name:'Dumbbell Thruster',sets:2,reps:{bal:'8-10',mass:'6-8',cut:'12-15'},muscles:['Quads','Glutes','Shoulders','Full Body'],
-     video:'https://www.youtube.com/results?search_query=dumbbell+thruster+proper+form',
-     instructions:'Hold dumbbells at your shoulders. Squat to full depth, then drive up explosively and use that momentum to press the dumbbells overhead in one fluid motion.',
-     tips:['One continuous movement — squat drive flows into the press','Breathe out on the drive up','Great conditioning finisher on a mixed day'],
-     mistakes:['Pausing between squat and press','Cutting squat depth','Arching the back on the press']},
-    {id:'band-curl',name:'Band Bicep Curl',sets:2,reps:{bal:'12-15',mass:'8-10',cut:'15-20'},muscles:['Biceps','Forearms'],
-     video:'https://www.youtube.com/results?search_query=resistance+band+bicep+curl+proper+form',
-     instructions:'Stand on the band, palms forward. Curl to your shoulders keeping elbows pinned at your sides. Fight the band on the way down.',
-     tips:['Tension is highest at the top — squeeze hard there','Slow 3-second negatives','Wider stance = more resistance'],
-     mistakes:['Elbows drifting forward','Swinging the torso','Letting the band snap down']},
-    {id:'renegade-row',name:'Renegade Row',sets:2,reps:{bal:'8 each side',mass:'6 each side heavy',cut:'10-12 each side'},muscles:['Lats','Core','Shoulders'],
-     video:'https://www.youtube.com/results?search_query=renegade+row+proper+form',
-     instructions:'Start in a push-up position gripping two dumbbells. Row one dumbbell to your ribs while bracing hard to keep the hips level, lower, then row the other side.',
-     tips:['Hips stay square — no twisting toward the rowing arm','Wide feet make it easier, narrow feet harder','Hex dumbbells are more stable than round'],
-     mistakes:['Rotating the hips to hoist the weight','Sagging or piking the hips','Rushing the reps']},
-  ]
 };
 
 
-// Build b8 keeps the established UI and exercise library while making the default
-// program a strict, progression-friendly A/B/C rotation.
+// Program v3: a true Push / Pull / Legs + Core split.
+// Each exercise appears in only one default day so adjacent sessions do not
+// repeat the same movement or directly reload the same primary muscle groups.
 const byExerciseId=id=>Object.values(WORKOUTS).flat().find(ex=>ex.id===id);
 const configureExercise=(id,sets,reps,rest,movement,load)=>Object.assign(byExerciseId(id),{sets,reps,rest,movement,load});
+const WORKOUT_NAMES={A:'PUSH',B:'PULL',C:'LEGS + CORE'};
 
-configureExercise('goblet-squat',3,'8-12',150,'squat',['Quads','Glutes','Core']);
-configureExercise('db-bench',3,'8-12',150,'horizontal push',['Chest','Shoulders','Triceps']);
-configureExercise('db-row',3,'10 each side',120,'horizontal pull',['Lats','Upper Back','Biceps']);
-configureExercise('lat-raise',2,'12-15',60,'isolation',['Shoulders']);
-configureExercise('plank',3,'30-60 sec',60,'core',['Core','Shoulders']);
-const farmerCarry={id:'farmer-carry',name:'Farmer Carry',sets:3,reps:'30-50 ft',rest:90,movement:'carry',load:['Grip','Core','Upper Back'],muscles:['Grip','Traps','Core'],
-  video:'https://www.youtube.com/results?search_query=farmer+carry+proper+form',
-  instructions:'Hold heavy dumbbells at your sides and walk with tall posture for 30-50 feet. Turn safely, reset your brace, and keep the weights quiet.',
-  tips:['Pack shoulders down and back','Use short controlled steps','Brace as if expecting a punch'],
-  mistakes:['Leaning to one side','Letting shoulders roll forward','Rushing the turn']};
-WORKOUTS.A=[byExerciseId('goblet-squat'),byExerciseId('db-bench'),byExerciseId('db-row'),byExerciseId('lat-raise'),byExerciseId('plank'),farmerCarry];
-
-configureExercise('bss',3,'8-12 each leg',150,'unilateral squat',['Quads','Glutes','Hamstrings']);
-configureExercise('rdl',3,'8-12',150,'hinge',['Hamstrings','Glutes','Lower Back']);
+// A — PUSH: chest, front/side delts, triceps
+configureExercise('db-bench',3,'8-12',120,'horizontal push',['Chest','Shoulders','Triceps']);
+configureExercise('incline-press',2,'8-12',90,'incline push',['Upper Chest','Shoulders','Triceps']);
 configureExercise('seated-press',3,'8-12',120,'vertical push',['Shoulders','Triceps']);
+configureExercise('lat-raise',2,'12-15',60,'isolation',['Side Delts']);
+configureExercise('band-pushdown',2,'15-20',60,'isolation',['Triceps']);
+WORKOUTS.A=[
+  byExerciseId('db-bench'),
+  byExerciseId('seated-press'),
+  byExerciseId('incline-press'),
+  byExerciseId('lat-raise'),
+  byExerciseId('band-pushdown')
+];
+
+// B — PULL: lats, upper back, rear delts, biceps
+configureExercise('db-row',3,'8-12 each side',120,'horizontal pull',['Lats','Upper Back','Biceps']);
+configureExercise('chest-row',2,'10-12',90,'horizontal pull',['Upper Back','Rear Delts','Biceps']);
 configureExercise('face-pull',2,'15-20',60,'shoulder health',['Rear Delts','Rotator Cuff','Upper Back']);
 configureExercise('hammer-curl',2,'10-12',60,'isolation',['Biceps','Forearms']);
-configureExercise('dead-bug',3,'8-10 each side',60,'core',['Core','Hip Flexors']);
+configureExercise('band-pull-apart',2,'15-20',60,'shoulder health',['Rear Delts','Rhomboids','Upper Back']);
 const bandLatPulldown={id:'band-lat-pulldown',name:'Band Lat Pulldown',sets:3,reps:'12-15',rest:90,movement:'vertical pull',load:['Lats','Upper Back','Biceps'],muscles:['Lats','Upper Back','Biceps'],
   video:'https://www.youtube.com/results?search_query=resistance+band+lat+pulldown+proper+form',
   instructions:'Anchor the band securely overhead. Begin with long arms, pull your elbows toward your ribs, pause, and return under control.',
   tips:['Think elbows to back pockets','Keep shoulders away from ears','Let the lats lengthen at the top'],
   mistakes:['Leaning far backward','Shrugging through the pull','Rushing the return']};
-WORKOUTS.B=[byExerciseId('bss'),byExerciseId('rdl'),byExerciseId('seated-press'),bandLatPulldown,byExerciseId('face-pull'),byExerciseId('hammer-curl'),byExerciseId('dead-bug')];
+WORKOUTS.B=[
+  byExerciseId('db-row'),
+  bandLatPulldown,
+  byExerciseId('chest-row'),
+  byExerciseId('face-pull'),
+  byExerciseId('hammer-curl'),
+  byExerciseId('band-pull-apart')
+];
 
-configureExercise('step-up',3,'10 each leg',120,'unilateral squat',['Quads','Glutes']);
-configureExercise('pushup',2,'10-15',90,'horizontal push',['Chest','Shoulders','Triceps','Core']);
-configureExercise('chest-row',3,'10-12',120,'horizontal pull',['Upper Back','Rear Delts','Biceps']);
-configureExercise('band-pushdown',2,'15-20',60,'isolation',['Triceps']);
-configureExercise('band-pallof',3,'10-12 each side',60,'core',['Core','Obliques']);
-const bandLegCurl={id:'band-leg-curl',name:'Band Leg Curl',sets:3,reps:'12-15',rest:75,movement:'knee flexion',load:['Hamstrings'],muscles:['Hamstrings'],
+// C — LEGS + CORE: quads, glutes, hamstrings, trunk
+configureExercise('goblet-squat',3,'8-12',120,'squat',['Quads','Glutes','Core']);
+configureExercise('rdl',3,'8-12',120,'hinge',['Hamstrings','Glutes','Lower Back']);
+configureExercise('bss',2,'8-10 each leg',90,'unilateral squat',['Quads','Glutes','Hamstrings']);
+configureExercise('dead-bug',2,'8-10 each side',60,'core',['Core','Hip Flexors']);
+configureExercise('band-pallof',2,'10-12 each side',60,'core',['Core','Obliques']);
+const bandLegCurl={id:'band-leg-curl',name:'Band Leg Curl',sets:2,reps:'12-15',rest:75,movement:'knee flexion',load:['Hamstrings'],muscles:['Hamstrings'],
   video:'https://www.youtube.com/results?search_query=resistance+band+leg+curl+proper+form',
   instructions:'Anchor the band low and secure it around the ankles. Curl the heel toward the glute without lifting the hips, then return slowly.',
   tips:['Keep the hips quiet','Squeeze at the top','Use a slow return'],
   mistakes:['Arching the lower back','Jerking the band','Losing tension at the bottom']};
-const suitcaseCarry={id:'suitcase-carry',name:'Suitcase Carry',sets:3,reps:'30-50 ft each side',rest:90,movement:'carry',load:['Core','Obliques','Grip'],muscles:['Core','Obliques','Grip'],
-  video:'https://www.youtube.com/results?search_query=suitcase+carry+exercise+proper+form',
-  instructions:'Hold one heavy dumbbell at your side. Walk tall while resisting the urge to lean, then switch sides.',
-  tips:['Stay tall','Keep the loaded shoulder packed','Take controlled steps'],
-  mistakes:['Leaning toward or away from the load','Letting the shoulder sag','Moving too quickly']};
-WORKOUTS.C=[byExerciseId('step-up'),byExerciseId('pushup'),byExerciseId('chest-row'),bandLegCurl,byExerciseId('band-pushdown'),byExerciseId('band-pallof'),suitcaseCarry];
-delete WORKOUTS.D;
+WORKOUTS.C=[
+  byExerciseId('goblet-squat'),
+  byExerciseId('rdl'),
+  byExerciseId('bss'),
+  bandLegCurl,
+  byExerciseId('dead-bug'),
+  byExerciseId('band-pallof')
+];
 
 const FOCUS_POOLS={
   reardelts:[
@@ -899,9 +880,9 @@ const FOCUS_LABELS={reardelts:'Rear Delts',sidedelts:'Side Delts',upperchest:'Up
 const FOCUS_GROUPS={'Shoulders':['reardelts','sidedelts'],'Chest':['upperchest','midchest'],'Back':['lats','upperback'],'Arms':['biceps','triceps'],'Legs':['quads','hamstrings','glutes','calves'],'Other':['core','grip']};
 const FOCUS_NOTES={reardelts:'Useful when extra shoulder-health work is a real priority.',sidedelts:'Adds a small amount of direct shoulder volume.',upperchest:'Adds targeted upper-chest work.',midchest:'Adds targeted chest work.',lats:'Adds vertical-pulling volume.',upperback:'Adds posture-focused upper-back work.',biceps:'Adds direct arm work beyond rows and pulldowns.',triceps:'Adds direct arm work beyond pressing.',quads:'Adds knee-dominant leg volume.',hamstrings:'Adds posterior-chain volume.',glutes:'Adds hip-extension volume.',calves:'Adds direct ankle and calf work.',core:'Adds rotational or lateral trunk work.',grip:'Adds extra grip work beyond the programmed carries.'};
 const PAIRS={
-  A:[['goblet-squat','db-bench'],['db-row','lat-raise'],['plank','farmer-carry']],
-  B:[['bss','band-lat-pulldown'],['rdl','seated-press'],['face-pull','hammer-curl'],['dead-bug']],
-  C:[['step-up','pushup'],['chest-row','band-leg-curl'],['band-pushdown','band-pallof'],['suitcase-carry']]
+  A:[['db-bench'],['seated-press'],['incline-press','lat-raise'],['band-pushdown']],
+  B:[['db-row','face-pull'],['band-lat-pulldown','hammer-curl'],['chest-row','band-pull-apart']],
+  C:[['goblet-squat','dead-bug'],['rdl','band-pallof'],['bss','band-leg-curl']]
 };
 
 
@@ -976,6 +957,10 @@ S.customProgram=S.customProgram||{};
 S.conditioning=S.conditioning||[];
 S.readiness=S.readiness||{fatigue:2};
 if(S.quickLog===undefined)S.quickLog=false;
+if(S.programVersion!=='ppl-v1'){
+  S.customProgram={};
+  S.programVersion='ppl-v1';
+}
 if(!['A','B','C'].includes(S.nextWorkout))S.nextWorkout='A';
 function save(){localStorage.setItem('ironpath_v2',JSON.stringify(S));}
 
@@ -1101,7 +1086,7 @@ function renderRecovery(){
     meta.innerHTML='<span class="recovery-chip">'+r.required+'h target met</span><span class="recovery-chip">Next: '+S.nextWorkout+'</span>';
   }else{
     title.textContent='Cardio / recovery recommended';
-    text.textContent='Workout '+r.last.workout+' still overlaps the next strength session. Zone 2, walking, and mobility build fitness without competing with recovery.';
+    text.textContent='Your last strength session is still inside its recovery window. The next split targets different primary muscles, but Zone 2, walking, or mobility is the better choice if you still feel systemically fatigued.';
     meta.innerHTML='<span class="recovery-chip">~'+r.hours+'h recovery remaining</span><span class="recovery-chip">Next strength: '+S.nextWorkout+'</span>';
   }
   strength.textContent=r.ready?'START WORKOUT '+S.nextWorkout:'TRAIN ANYWAY • '+S.nextWorkout;
@@ -1230,7 +1215,7 @@ function renderExerciseList(letter){
   const totalSets=exs.reduce((a,e)=>a+e.sets,0);
   const est=Math.round(totalSets*2.5+5);
   document.getElementById('exerciseList').innerHTML=
-    `<div style="font-size:12px;color:var(--text2);padding:2px 2px 10px;line-height:1.5">⏱ ~${est} min · Work in pairs when form stays strong · rest 60–150s as shown by the timer</div>`+
+    `<div style="font-size:12px;color:var(--text2);padding:2px 2px 10px;line-height:1.5"><strong style="color:var(--orange)">${WORKOUT_NAMES[letter]||letter}</strong> · ⏱ ~${est} min · no exercise repeats across A/B/C · use the rest timer between hard sets</div>`+
     exs.map((ex,i)=>{
       const isFocus=i<focus.length;
       const base=WORKOUTS[letter]||[];
@@ -1944,7 +1929,7 @@ function confirmReset(){
 // Service worker: network-first so updates land immediately
 if('serviceWorker' in navigator){
   const swCode=`
-    const C='ip-b10';
+    const C='ip-b11';
     self.addEventListener('install',e=>{self.skipWaiting();});
     self.addEventListener('activate',e=>{
       e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
@@ -1964,7 +1949,7 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
   // Drop caches from earlier builds
   if(window.caches){
-    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b10')caches.delete(k);}));
+    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b11')caches.delete(k);}));
   }
 }
 
