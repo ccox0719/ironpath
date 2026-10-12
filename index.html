@@ -648,8 +648,13 @@ const WORKOUTS = {
 // Program v3: a true Push / Pull / Legs + Core split.
 // Each exercise appears in only one default day so adjacent sessions do not
 // repeat the same movement or directly reload the same primary muscle groups.
-const byExerciseId=id=>Object.values(WORKOUTS).flat().find(ex=>ex.id===id);
-const configureExercise=(id,sets,reps,rest,movement,load)=>Object.assign(byExerciseId(id),{sets,reps,rest,movement,load});
+const EXERCISE_CATALOG=Object.values(WORKOUTS).flat();
+const byExerciseId=id=>EXERCISE_CATALOG.find(ex=>ex.id===id);
+const configureExercise=(id,sets,reps,rest,movement,load)=>{
+  const ex=byExerciseId(id);
+  if(!ex)throw new Error('Missing exercise: '+id);
+  return Object.assign(ex,{sets,reps,rest,movement,load});
+};
 const WORKOUT_NAMES={A:'PUSH',B:'PULL',C:'LEGS + CORE'};
 
 // A — PUSH: chest, front/side delts, triceps
@@ -1929,7 +1934,7 @@ function confirmReset(){
 // Service worker: network-first so updates land immediately
 if('serviceWorker' in navigator){
   const swCode=`
-    const C='ip-b11';
+    const C='ip-b12';
     self.addEventListener('install',e=>{self.skipWaiting();});
     self.addEventListener('activate',e=>{
       e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
@@ -1949,7 +1954,7 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
   // Drop caches from earlier builds
   if(window.caches){
-    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b11')caches.delete(k);}));
+    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b12')caches.delete(k);}));
   }
 }
 
