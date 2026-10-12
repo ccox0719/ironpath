@@ -109,7 +109,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .add-set-btn:active{border-color:var(--orange);color:var(--orange)}
 .simple-session-card{transition:border-color .2s,background .2s}
 .simple-session-card.done{border-color:rgba(61,190,120,.55);background:rgba(61,190,120,.05)}
-.exercise-done-btn{margin:0 14px 14px;width:calc(100% - 28px);padding:13px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text3);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:1.5px;cursor:pointer;transition:all .18s}
+.simple-card-actions{display:flex;gap:8px;padding:0 14px 14px;align-items:stretch}
+.exercise-video-btn{flex:0 0 auto;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .18s}
+.exercise-video-btn:active{border-color:var(--orange);color:var(--orange);transform:scale(.97)}
+.exercise-done-btn{flex:1;margin:0;padding:11px 13px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text3);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:1.5px;cursor:pointer;transition:all .18s}
 .exercise-done-btn.done{background:var(--green);border-color:var(--green);color:#fff}
 .exercise-done-btn:active{transform:scale(.98)}
 .rest-timer-overlay{position:fixed;inset:0;background:rgba(8,8,8,.96);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;gap:20px}
@@ -1348,7 +1351,7 @@ let activeSessionExs=[];
 function sessionCardHTML(ex,index){
   if(!ex)return'';
   return `<div class="ex-session-card simple-session-card" id="exercise-card-${ex.id}">
-    <div class="ex-session-header" onclick="showDetail('${ex.id}')">
+    <div class="ex-session-header">
       <div style="flex:1">
         <div class="ex-session-name">${ex.name}</div>
         <div style="font-size:12px;color:var(--text3);margin-top:3px">${ex.sets} sets · ${getReps(ex)} reps</div>
@@ -1356,7 +1359,10 @@ function sessionCardHTML(ex,index){
       </div>
       <div class="ex-num">${index+1}</div>
     </div>
-    <button class="exercise-done-btn" id="done-${ex.id}" onclick="toggleExerciseDone('${ex.id}',this)">✓ DONE</button>
+    <div class="simple-card-actions">
+      <button class="exercise-video-btn" onclick="showDetail('${ex.id}')">▶ HOW TO</button>
+      <button class="exercise-done-btn" id="done-${ex.id}" onclick="toggleExerciseDone('${ex.id}',this)">✓ DONE</button>
+    </div>
   </div>`;
 }
 function toggleExerciseDone(exId,btn){
