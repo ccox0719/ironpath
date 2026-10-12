@@ -7,6 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="Iron Path — Dumbbell strength training companion">
+<meta name="apple-mobile-web-app-title" content="Iron Path">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="ironpath-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="ironpath-icon.svg">
 <title>Iron Path</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1584,33 +1588,49 @@ function closeComplete(){
 
 // ===================== REST TIMER =====================
 let restEndsAt=0;
+let restRaf=0;
 function updateRestTimer(){
   if(!restEndsAt)return;
   restLeft=Math.max(0,Math.ceil((restEndsAt-Date.now())/1000));
   const count=document.getElementById('restCount');
   if(count)count.textContent=restLeft;
-  if(restLeft<=0)skipRest();
+  if(restLeft<=0){skipRest();return;}
+}
+function restFrame(){
+  if(!restEndsAt)return;
+  updateRestTimer();
+  if(restEndsAt)restRaf=requestAnimationFrame(restFrame);
 }
 function showRestTimer(secs){
   const safeSecs=Math.max(1,Number(secs)||90);
   clearInterval(restInt);
+  if(restRaf)cancelAnimationFrame(restRaf);
   restEndsAt=Date.now()+(safeSecs*1000);
   restLeft=safeSecs;
   document.getElementById('restCount').textContent=restLeft;
   document.getElementById('restOverlay').classList.add('active');
-  restInt=setInterval(updateRestTimer,250);
-  updateRestTimer();
+  restRaf=requestAnimationFrame(restFrame);
 }
 function skipRest(){
   clearInterval(restInt);
   restInt=null;
+  if(restRaf)cancelAnimationFrame(restRaf);
+  restRaf=0;
   restEndsAt=0;
   restLeft=0;
   document.getElementById('restOverlay').classList.remove('active');
 }
+function syncRestAfterResume(){
+  if(restEndsAt){
+    updateRestTimer();
+    if(restEndsAt&&!restRaf)restRaf=requestAnimationFrame(restFrame);
+  }
+}
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden&&restEndsAt)updateRestTimer();
+  if(!document.hidden)syncRestAfterResume();
 });
+window.addEventListener('focus',syncRestAfterResume);
+window.addEventListener('pageshow',syncRestAfterResume);
 
 // ===================== PROGRESS =====================
 function buildVolumeChart(){
