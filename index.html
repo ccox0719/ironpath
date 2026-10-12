@@ -1931,33 +1931,21 @@ function confirmReset(){
   }
 }
 
-// Service worker: network-first so updates land immediately
+// iOS stability: blob-URL service workers are not valid persistent PWA workers.
+// Remove obsolete registrations and caches. Run online-first until a dedicated
+// same-origin service-worker.js can be deployed.
 if('serviceWorker' in navigator){
-  const swCode=`
-    const C='ip-b12';
-    self.addEventListener('install',e=>{self.skipWaiting();});
-    self.addEventListener('activate',e=>{
-      e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
-      self.clients.claim();
-    });
-    self.addEventListener('fetch',e=>{
-      if(e.request.method!=='GET')return;
-      e.respondWith(
-        fetch(e.request).then(r=>{
-          const copy=r.clone();
-          caches.open(C).then(c=>c.put(e.request,copy));
-          return r;
-        }).catch(()=>caches.match(e.request))
-      );
-    });`;
-  const blob=new Blob([swCode],{type:'application/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
-  // Drop caches from earlier builds
-  if(window.caches){
-    caches.keys().then(ks=>ks.forEach(k=>{if(k!=='ip-b12')caches.delete(k);}));
-  }
+  navigator.serviceWorker.getRegistrations().then(regs=>
+    Promise.all(regs.map(reg=>reg.unregister()))
+  ).catch(()=>{});
 }
-
+if(window.caches){
+  caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('ip-b')).map(k=>caches.delete(k)))).catch(()=>{});
+}
+window.addEventListener('pageshow',()=>{
+  if(typeof updateRestTimer==='function')updateRestTimer();
+  if(typeof renderRecovery==='function')renderRecovery();
+});
 init();
 </script>
 </body>
