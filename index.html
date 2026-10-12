@@ -107,6 +107,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .check-btn.done{background:var(--green);border-color:var(--green);color:#fff}
 .add-set-btn{margin:8px 16px 12px;padding:8px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:12px;cursor:pointer;text-align:center;transition:all .2s}
 .add-set-btn:active{border-color:var(--orange);color:var(--orange)}
+.simple-session-card{transition:border-color .2s,background .2s}
+.simple-session-card.done{border-color:rgba(61,190,120,.55);background:rgba(61,190,120,.05)}
+.exercise-done-btn{margin:0 14px 14px;width:calc(100% - 28px);padding:13px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text3);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:1.5px;cursor:pointer;transition:all .18s}
+.exercise-done-btn.done{background:var(--green);border-color:var(--green);color:#fff}
+.exercise-done-btn:active{transform:scale(.98)}
 .rest-timer-overlay{position:fixed;inset:0;background:rgba(8,8,8,.96);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;gap:20px}
 .rest-timer-overlay.active{display:flex}
 .rest-big{font-family:'Barlow Condensed',sans-serif;font-size:110px;font-weight:800;color:var(--orange);line-height:1}
@@ -540,8 +545,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   <div class="complete-icon">🏋️</div>
   <div class="complete-title">WORKOUT<br>COMPLETE</div>
   <div class="complete-stats">
-    <div class="complete-stat"><div class="complete-stat-num" id="cSets">0</div><div class="complete-stat-label">Sets</div></div>
-    <div class="complete-stat"><div class="complete-stat-num" id="cVol">0</div><div class="complete-stat-label">lbs</div></div>
+    <div class="complete-stat"><div class="complete-stat-num" id="cSets">0</div><div class="complete-stat-label">Exercises</div></div>
+    <div class="complete-stat"><div class="complete-stat-num" id="cVol">✓</div><div class="complete-stat-label">Complete</div></div>
     <div class="complete-stat"><div class="complete-stat-num" id="cTime">0</div><div class="complete-stat-label">min</div></div>
   </div>
   <button class="complete-btn" onclick="closeComplete()">GREAT WORK →</button>
@@ -965,11 +970,13 @@ S.focus=S.focus||null;
 S.customProgram=S.customProgram||{};
 S.conditioning=S.conditioning||[];
 S.readiness=S.readiness||{fatigue:2};
-if(S.quickLog===undefined)S.quickLog=false;
-if(S.programVersion!=='ppl-v1'){
+S.quickLog=true;
+if(S.programVersion!=='simple-rotate-v1'){
   S.customProgram={};
-  S.programVersion='ppl-v1';
+  S.programVersion='simple-rotate-v1';
 }
+S.workoutRotations=S.workoutRotations||{A:0,B:0,C:0};
+['A','B','C'].forEach(k=>{if(!Number.isFinite(Number(S.workoutRotations[k])))S.workoutRotations[k]=0;});
 if(!['A','B','C'].includes(S.nextWorkout))S.nextWorkout='A';
 function save(){localStorage.setItem('ironpath_v2',JSON.stringify(S));}
 
@@ -1338,52 +1345,33 @@ let sessionStart=null, sessionInt=null, restInt=null, restLeft=0;
 let activeLetter='A';
 
 let activeSessionExs=[];
-function sessionCardHTML(ex,gi){
+function sessionCardHTML(ex,index){
   if(!ex)return'';
-  if(S.quickLog){
-    const pills=Array.from({length:ex.sets},(_,j)=>
-      `<div class="set-pill" data-group="${gi}" id="pill-${ex.id}-${j}" onclick="tapSet('${ex.id}',${j},this)">${j+1}</div>`
-    ).join('');
-    return `<div class="ex-session-card">
-      <div class="ex-session-header" onclick="showDetail('${ex.id}')">
-        <div>
-          <div class="ex-session-name">${ex.name}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px">${ex.muscles.join(' · ')}</div>
-        </div>
-        <div class="ex-session-target">${ex.sets}×${getReps(ex)}</div>
+  return `<div class="ex-session-card simple-session-card" id="exercise-card-${ex.id}">
+    <div class="ex-session-header" onclick="showDetail('${ex.id}')">
+      <div style="flex:1">
+        <div class="ex-session-name">${ex.name}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px">${ex.sets} sets · ${getReps(ex)} reps</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${ex.muscles.join(' · ')}</div>
       </div>
-      <div class="pill-row">
-        ${pills}
-        <div class="pill-add" onclick="addPill('${ex.id}',${gi},this)">+</div>
-        <input class="pill-weight" type="number" placeholder="lbs" id="qw-${ex.id}" inputmode="decimal" title="Optional — logs volume and PRs">
-      </div>
-      <div class="rir-row" id="rir-${ex.id}" data-rir="2"><span style="font-size:11px;color:var(--text3)">RIR</span>${[3,2,1,0].map(v=>`<button class="rir-choice ${v===2?'active':''}" onclick="selectRIR('${ex.id}',${v},this)">${v===3?'3+':v}</button>`).join('')}<span style="font-size:10px;color:var(--text3)">3+ easy · 2 productive · 1 hard · 0 failure</span></div>
-    </div>`;
-  }
-  const rows=Array.from({length:ex.sets},(_,j)=>`
-      <div class="sets-row" id="sr-${ex.id}-${j}">
-        <div class="set-num">${j+1}</div>
-        <input class="set-input" type="number" placeholder="lbs" id="sw-${ex.id}-${j}" inputmode="decimal">
-        <input class="set-input" type="number" placeholder="reps" id="sr2-${ex.id}-${j}" inputmode="numeric">
-        <div class="check-btn" data-group="${gi}" onclick="checkSet('${ex.id}',${j},this)">✓</div>
-      </div>`).join('');
-  return `<div class="ex-session-card">
-      <div class="ex-session-header" onclick="showDetail('${ex.id}')">
-        <div>
-          <div class="ex-session-name">${ex.name}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px">${ex.muscles.join(' · ')}</div>
-        </div>
-        <div class="ex-session-target">${ex.sets}×${getReps(ex)}</div>
-      </div>
-      <div>
-        <div class="sets-row hdr"><div>SET</div><div>WEIGHT</div><div>REPS</div><div></div></div>
-        ${rows}
-      </div>
-      <div class="add-set-btn" onclick="addSetRow('${ex.id}',this)">+ Add Set</div>
-      <div class="rir-row" id="rir-${ex.id}" data-rir="2"><span style="font-size:11px;color:var(--text3)">RIR</span>${[3,2,1,0].map(v=>`<button class="rir-choice ${v===2?'active':''}" onclick="selectRIR('${ex.id}',${v},this)">${v===3?'3+':v}</button>`).join('')}<span style="font-size:10px;color:var(--text3)">3+ easy · 2 productive · 1 hard · 0 failure</span></div>
-      <textarea class="note-input" placeholder="Notes for this exercise..." rows="1"></textarea>
-    </div>`;
+      <div class="ex-num">${index+1}</div>
+    </div>
+    <button class="exercise-done-btn" id="done-${ex.id}" onclick="toggleExerciseDone('${ex.id}',this)">✓ DONE</button>
+  </div>`;
 }
+function toggleExerciseDone(exId,btn){
+  btn.classList.toggle('done');
+  const card=document.getElementById('exercise-card-'+exId);
+  if(card)card.classList.toggle('done',btn.classList.contains('done'));
+  checkAllExercisesDone();
+}
+function checkAllExercisesDone(){
+  const btns=[...document.querySelectorAll('.exercise-done-btn')];
+  const allDone=btns.length>0&&btns.every(b=>b.classList.contains('done'));
+  const finish=document.getElementById('finishBtn');
+  if(finish)finish.classList.toggle('ready',allDone);
+}
+
 function selectRIR(exId,value,btn){
   const row=document.getElementById('rir-'+exId);
   row.dataset.rir=value;
@@ -1416,46 +1404,38 @@ function addPill(exId,gi,btn){
   btn.parentNode.insertBefore(p,btn);
   updateGroupProgress(gi);
 }
+function rotateWorkoutExercises(letter,exercises){
+  if(!exercises.length)return exercises;
+  const offset=Math.abs(Number(S.workoutRotations?.[letter]||0))%exercises.length;
+  return exercises.slice(offset).concat(exercises.slice(0,offset));
+}
 function startWorkout(forceLetter){
   activeLetter=['A','B','C'].includes(forceLetter)?forceLetter:S.nextWorkout;
-  selectFatigue(2,document.querySelector('#fatigueRow .rir-choice:nth-of-type(2)'));
-  const base=WORKOUTS[activeLetter].filter(e=>!getExerciseOverride(activeLetter,e.id)?.removed).map(e=>{
-    const custom=applyCustom(e,activeLetter);
-    const swapped=getExerciseForSession(e.id,activeLetter);
-    return{...(swapped||e),sets:custom.sets,reps:custom.reps,slotId:e.id};
-  });
-  const byId={};base.forEach(e=>byId[e.slotId||e.id]=e);
-  const groups=(PAIRS[activeLetter]||[]).map(p=>p.map(id=>byId[id]).filter(Boolean)).filter(g=>g.length);
-  const paired=new Set((PAIRS[activeLetter]||[]).flat());
-  const leftovers=base.filter(e=>!paired.has(e.slotId||e.id));
-  if(leftovers.length)groups.push(leftovers);
-  const focus=getFocusExs();
-  if(focus.length)groups.unshift(focus);
-  activeSessionExs=groups.flat();
-  document.getElementById('sessionTitle').textContent=`WORKOUT ${activeLetter}`;
-  document.getElementById('sessionBody').innerHTML=groups.map((g,gi)=>{
-    const isFocus=focus.length&&gi===0;
-    const label=isFocus?'OPTIONAL FOCUS — skip if recovery is limited':'PAIR '+(gi+(focus.length?0:1));
-    const total=g.reduce((a,e)=>a+e.sets,0);
-    return `<div class="ss-block" id="ssb-${gi}" data-group="${gi}">
-      <div class="ss-head">
-        <div class="ss-label">${label}</div>
-        <div class="ss-status" id="ssStatus-${gi}">
-          <span class="ss-count" id="ssCount-${gi}">0/${total}</span>
-          <span class="ss-check" id="ssCheck-${gi}">✓</span>
-        </div>
-      </div>
-      <div class="ss-bar"><div class="ss-fill" id="ssFill-${gi}" style="width:0%"></div></div>
-      <div class="ss-hint">Alternate only when technique and recovery stay strong</div>
+  const base=WORKOUTS[activeLetter]
+    .filter(e=>!getExerciseOverride(activeLetter,e.id)?.removed)
+    .map(e=>{
+      const custom=applyCustom(e,activeLetter);
+      const swapped=getExerciseForSession(e.id,activeLetter);
+      return{...(swapped||e),sets:custom.sets,reps:custom.reps,slotId:e.id};
+    });
+  activeSessionExs=rotateWorkoutExercises(activeLetter,base);
+
+  document.getElementById('sessionTitle').textContent=`WORKOUT ${activeLetter} · ${WORKOUT_NAMES[activeLetter]||''}`;
+  document.getElementById('sessionBody').innerHTML=`
+    <div style="font-size:12px;color:var(--text2);line-height:1.5;padding:2px 2px 6px">
+      Just complete each exercise and check it off. IronPath rotates the starting exercise every time you return to Workout ${activeLetter}.
     </div>
-    <div class="ss-group">${g.map(e=>sessionCardHTML(e,gi)).join('')}</div>`;
-  }).join('');
+    ${activeSessionExs.map((ex,i)=>sessionCardHTML(ex,i)).join('')}
+  `;
+
   const fb=document.getElementById('finishBtn');
   if(fb)fb.classList.remove('ready');
   sessionStart=Date.now();
+  clearInterval(sessionInt);
   sessionInt=setInterval(()=>{
     const e=Math.floor((Date.now()-sessionStart)/1000);
-    document.getElementById('sessionClock').textContent=`${Math.floor(e/60)}:${String(e%60).padStart(2,'0')}`;
+    const clock=document.getElementById('sessionClock');
+    if(clock)clock.textContent=`${Math.floor(e/60)}:${String(e%60).padStart(2,'0')}`;
   },1000);
   document.getElementById('sessionOverlay').classList.add('active');
 }
@@ -1522,61 +1502,26 @@ function finishWorkout(){
   const mins=Math.floor(elapsed/60);
   clearInterval(sessionInt);
 
-  const exs=activeSessionExs.length?activeSessionExs:WORKOUTS[activeLetter];
-  let totalVol=0,totalSets=0;
-  const loggedExercises=[];
-
-  exs.forEach(ex=>{
-    if(S.quickLog){
-      const pills=[...document.querySelectorAll(`[id^="pill-${ex.id}-"]`)];
-      const doneCount=pills.filter(p=>p.classList.contains('done')).length;
-      if(!doneCount)return;
-      totalSets+=doneCount;
-      const w=parseFloat(document.getElementById(`qw-${ex.id}`)?.value||0);
-      const repGuess=parseInt(String(getReps(ex)).match(/\d+/)?.[0]||0);
-      const sets=[];
-      for(let k=0;k<doneCount;k++)sets.push({w:w||null,r:repGuess||null});
-      if(w&&repGuess){
-        totalVol+=w*repGuess*doneCount;
-        const existW=S.prs[ex.id]?parseFloat(S.prs[ex.id]):0;
-        if(w>existW)S.prs[ex.id]=`${w} lbs × ${repGuess}`;
-      }
-      loggedExercises.push({id:ex.id,sets,rir:Number(document.getElementById('rir-'+ex.id)?.dataset.rir??2)});
-      return;
-    }
-    const maxSets=(setCounts[ex.id]||ex.sets)+2;
-    const sets=[];
-    for(let j=0;j<maxSets;j++){
-      const wEl=document.getElementById(`sw-${ex.id}-${j}`);
-      const rEl=document.getElementById(`sr2-${ex.id}-${j}`);
-      if(!wEl||!rEl)break;
-      const w=parseFloat(wEl.value||0);
-      const r=parseInt(rEl.value||0);
-      if(w&&r){
-        totalVol+=w*r;
-        totalSets++;
-        sets.push({w,r});
-        // PR check
-        const existing=S.prs[ex.id];
-        const existW=existing?parseFloat(existing):0;
-        if(w>existW)S.prs[ex.id]=`${w} lbs × ${r}`;
-      }
-    }
-    if(sets.length)loggedExercises.push({id:ex.id,sets,rir:Number(document.getElementById('rir-'+ex.id)?.dataset.rir??2)});
+  const completed=activeSessionExs.filter(ex=>document.getElementById('done-'+ex.id)?.classList.contains('done'));
+  S.workouts.push({
+    ts:Date.now(),
+    workout:activeLetter,
+    volume:0,
+    exercises:completed.map(ex=>({id:ex.id,done:true})),
+    durationSecs:elapsed
   });
-
-  const fatigue=Number(document.getElementById('fatigueRow')?.dataset.fatigue||2);
-  S.readiness.fatigue=fatigue;
-  S.workouts.push({ts:Date.now(),workout:activeLetter,volume:totalVol,exercises:loggedExercises,fatigue,durationSecs:elapsed});
   S.totalWorkouts++;
-  S.totalVolume+=totalVol;
   S.streak++;
-  const wOrder=['A','B','C'];S.nextWorkout=wOrder[(wOrder.indexOf(activeLetter)+1)%wOrder.length];
+  S.workoutRotations=S.workoutRotations||{A:0,B:0,C:0};
+  S.workoutRotations[activeLetter]=(Number(S.workoutRotations[activeLetter]||0)+1)%Math.max(1,WORKOUTS[activeLetter].length);
+
+  const wOrder=['A','B','C'];
+  S.nextWorkout=wOrder[(wOrder.indexOf(activeLetter)+1)%wOrder.length];
   save();
 
   document.getElementById('sessionOverlay').classList.remove('active');
-  document.getElementById('cSets').textContent=totalSets;
-  document.getElementById('cVol').textContent=Math.round(totalVol).toLocaleString();
+  document.getElementById('cSets').textContent=completed.length;
+  document.getElementById('cVol').textContent='✓';
   document.getElementById('cTime').textContent=mins;
   document.getElementById('completeOverlay').classList.add('active');
 }
