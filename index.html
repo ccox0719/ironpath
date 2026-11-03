@@ -120,6 +120,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 .rest-big{font-family:'Barlow Condensed',sans-serif;font-size:110px;font-weight:800;color:var(--orange);line-height:1}
 .rest-label{font-size:13px;color:var(--text2);letter-spacing:3px;text-transform:uppercase}
 .rest-skip{padding:12px 32px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2)}
+.watch-reminder{position:fixed;left:16px;right:16px;bottom:max(26px,env(safe-area-inset-bottom,0));z-index:250;display:none;max-width:448px;margin:0 auto;background:var(--card);border:1px solid var(--orange);border-radius:var(--radius);padding:14px;box-shadow:0 12px 32px rgba(0,0,0,.45)}
+.watch-reminder.active{display:flex;align-items:center;gap:12px;animation:fadeUp .22s ease forwards}
+.watch-reminder-icon{font-size:24px;line-height:1}
+.watch-reminder-copy{flex:1;min-width:0}
+.watch-reminder-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.7px;text-transform:uppercase}
+.watch-reminder-text{font-size:12px;line-height:1.35;color:var(--text2);margin-top:2px}
+.watch-reminder-dismiss{border:1px solid var(--border2);border-radius:7px;background:var(--bg);color:var(--text);padding:8px 10px;font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.8px;cursor:pointer;white-space:nowrap}
+.watch-reminder-dismiss:active{border-color:var(--orange);color:var(--orange)}
 .detail-overlay{position:fixed;inset:0;background:var(--bg);z-index:100;display:none;flex-direction:column;max-width:480px;margin:0 auto}
 .detail-overlay.active{display:flex}
 .detail-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
@@ -518,6 +526,16 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   <div class="rest-label">SECONDS</div>
   <div class="rest-skip" onclick="skipRest()">Skip →</div>
 </div>
+
+<!-- This card stays separate from the timer, so the countdown keeps running. -->
+<aside class="watch-reminder" id="watchReminder" role="status" aria-live="polite" aria-label="Apple Watch workout reminder">
+  <div class="watch-reminder-icon" aria-hidden="true">⌚</div>
+  <div class="watch-reminder-copy">
+    <div class="watch-reminder-title">Start Apple Watch Workout</div>
+    <div class="watch-reminder-text">Choose Traditional Strength Training on your Apple Watch.</div>
+  </div>
+  <button class="watch-reminder-dismiss" type="button" onclick="dismissWatchReminder()">GOT IT</button>
+</aside>
 
 <!-- EXERCISE DETAIL -->
 <div class="detail-overlay" id="detailOverlay">
@@ -1346,6 +1364,7 @@ function getHistory(exId){
 // ===================== WORKOUT SESSION =====================
 let sessionStart=null, sessionInt=null, restInt=null, restLeft=0;
 let activeLetter='A';
+let watchReminderShown=false;
 
 let activeSessionExs=[];
 function sessionCardHTML(ex,index){
@@ -1359,17 +1378,45 @@ function sessionCardHTML(ex,index){
       </div>
       <div class="ex-num">${index+1}</div>
     </div>
+    <div class="pill-row" aria-label="${ex.name} sets">
+      ${Array.from({length:Math.max(1,Number(ex.sets)||1)},(_,setIndex)=>`<button class="set-pill" type="button" aria-label="Complete set ${setIndex+1}" onclick="toggleSessionSet('${ex.id}',${setIndex},this)">${setIndex+1}</button>`).join('')}
+    </div>
     <div class="simple-card-actions">
       <button class="exercise-video-btn" onclick="showDetail('${ex.id}')">▶ HOW TO</button>
       <button class="exercise-done-btn" id="done-${ex.id}" onclick="toggleExerciseDone('${ex.id}',this)">✓ DONE</button>
     </div>
   </div>`;
 }
+function toggleSessionSet(exId,setIndex,el){
+  el.classList.toggle('done');
+  const justDone=el.classList.contains('done');
+  const setButtons=[...el.parentElement.querySelectorAll('.set-pill')];
+  const exerciseDone=setButtons.length>0&&setButtons.every(button=>button.classList.contains('done'));
+  const doneButton=document.getElementById('done-'+exId);
+  const card=document.getElementById('exercise-card-'+exId);
+  if(doneButton)doneButton.classList.toggle('done',exerciseDone);
+  if(card)card.classList.toggle('done',exerciseDone);
+  checkAllExercisesDone();
+  if(justDone){
+    showWatchReminder();
+    if(document.getElementById('togRest').classList.contains('on')&&!exerciseDone){
+      showRestTimer(getRestTime(exId,activeLetter));
+    }
+  }
+}
 function toggleExerciseDone(exId,btn){
   btn.classList.toggle('done');
   const card=document.getElementById('exercise-card-'+exId);
   if(card)card.classList.toggle('done',btn.classList.contains('done'));
   checkAllExercisesDone();
+}
+function showWatchReminder(){
+  if(watchReminderShown)return;
+  watchReminderShown=true;
+  document.getElementById('watchReminder')?.classList.add('active');
+}
+function dismissWatchReminder(){
+  document.getElementById('watchReminder')?.classList.remove('active');
 }
 function checkAllExercisesDone(){
   const btns=[...document.querySelectorAll('.exercise-done-btn')];
@@ -1395,6 +1442,7 @@ function tapSet(exId,j,el){
   const gi=el.dataset.group;
   const justDone=el.classList.contains('done');
   const complete=updateGroupProgress(gi);
+  if(justDone)showWatchReminder();
   if(justDone&&document.getElementById('togRest').classList.contains('on')&&!complete){
     showRestTimer(getRestTime(exId,activeLetter));
   }
@@ -1425,6 +1473,9 @@ function startWorkout(forceLetter){
       return{...(swapped||e),sets:custom.sets,reps:custom.reps,slotId:e.id};
     });
   activeSessionExs=rotateWorkoutExercises(activeLetter,base);
+  // New workout, new one-time reminder.
+  watchReminderShown=false;
+  dismissWatchReminder();
 
   document.getElementById('sessionTitle').textContent=`WORKOUT ${activeLetter} · ${WORKOUT_NAMES[activeLetter]||''}`;
   document.getElementById('sessionBody').innerHTML=`
@@ -1465,6 +1516,7 @@ function checkSet(exId,j,btn){
   const gi=btn.dataset.group;
   const justDone=btn.classList.contains('done');
   const complete=updateGroupProgress(gi);
+  if(justDone)showWatchReminder();
   if(justDone&&document.getElementById('togRest').classList.contains('on')&&!complete){
     showRestTimer(getRestTime(exId,activeLetter));
   }
@@ -1499,6 +1551,7 @@ function checkAllGroupsDone(){
 function closeSession(){
   if(confirm('End workout early? Progress will not be saved.')){
     clearInterval(sessionInt);
+    dismissWatchReminder();
     document.getElementById('sessionOverlay').classList.remove('active');
   }
 }
@@ -1525,6 +1578,7 @@ function finishWorkout(){
   S.nextWorkout=wOrder[(wOrder.indexOf(activeLetter)+1)%wOrder.length];
   save();
 
+  dismissWatchReminder();
   document.getElementById('sessionOverlay').classList.remove('active');
   document.getElementById('cSets').textContent=completed.length;
   document.getElementById('cVol').textContent='✓';
